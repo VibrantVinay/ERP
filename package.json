@@ -1,10 +1,22 @@
 {
-  "name": "rift-restaurant-erp",
-  "version": "1.0.0",
+  "name": "rift-erp-monorepo",
+  "version": "2.0.0",
+  "description": "Rift Restaurant ERP - Pluggable Battery Architecture (Django pattern in Next.js & TypeScript)",
   "private": true,
-  "type": "module",
-  "engines": { "node": ">=20.6.0" },
   "scripts": {
-    "start": "node --env-file-if-exists=.env server.mjs"
-  }
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "erp",
+    "restaurant",
+    "nextjs",
+    "typescript",
+    "django-pattern",
+    "pluggable-apps"
+  ],
+  "author": "",
+  "license": "ISC"
 }

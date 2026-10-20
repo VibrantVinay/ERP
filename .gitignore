@@ -1,8 +1,31 @@
+# Dependencies
 node_modules/
-storage/
-*.tmp
-npm-debug.log*
-.vercel/
+*/node_modules/
+
+# Production builds
+dist/
+*/dist/
+.next/
+*/.next/
+out/
+*/out/
+build/
+*/build/
+
+# Local env files
 .env
 .env.*
 !.env.example
+*/.env
+*/.env.*
+!*/.env.example
+
+# Logs and storage
+*.log
+npm-debug.log*
+yarn-debug.log*
+storage/
+*.tmp
+.vercel/
+.DS_Store
+Thumbs.db

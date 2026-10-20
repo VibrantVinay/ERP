@@ -100,8 +100,6 @@ Supported 7 core roles:
   * `POST /api/v1/auth/switch-branch`
 
 ---
-# DONE TILL THIS
-
 ### App 2: `pos` (Point of Sale)
 * **Entities**: `PosCart`, `PosTicket`, `PosDiscount`, `PosPaymentMethod`
 * **Features**:
@@ -117,6 +115,8 @@ Supported 7 core roles:
   * `POST /api/v1/pos/tickets/:id/split` (Splits ticket into multiple sub-tickets)
 
 ---
+# DONE TILL THIS
+
 
 ### App 3: `orders` (Order Management Lifecycle)
 * **Entities**: `Order`, `OrderItem`, `OrderStatusHistory`, `OrderPayment`

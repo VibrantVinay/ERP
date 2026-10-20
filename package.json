@@ -4,8 +4,10 @@
   "description": "Rift Restaurant ERP - Pluggable Battery Architecture (Django pattern in Next.js & TypeScript)",
   "private": true,
   "scripts": {
+    "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
+    "clean": "npm --prefix frontend run clean",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build"
   },
@@ -18,5 +20,8 @@
     "pluggable-apps"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

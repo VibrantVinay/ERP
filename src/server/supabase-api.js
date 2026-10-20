@@ -58,10 +58,26 @@ async function supabase(path, accessToken, options = {}) {
 }
 
 async function readBody(req) {
+  // Use Vercel's pre-parsed body if available
+  if (req.body) {
+    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  }
+  
+  // Fallback for local Node.js development
   let size = 0; const chunks = [];
-  for await (const chunk of req) { size += chunk.length; if (size > 1_000_000) { const error = new Error('Request body exceeds 1 MB'); error.status = 413; throw error; } chunks.push(chunk); }
+  for await (const chunk of req) { 
+    size += chunk.length; 
+    if (size > 1_000_000) { 
+      const error = new Error('Request body exceeds 1 MB'); error.status = 413; throw error; 
+    } 
+    chunks.push(chunk); 
+  }
   if (!size) return {};
-  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { const error = new Error('Request body must be valid JSON'); error.status = 400; throw error; }
+  try { 
+    return JSON.parse(Buffer.concat(chunks).toString('utf8')); 
+  } catch { 
+    const error = new Error('Request body must be valid JSON'); error.status = 400; throw error; 
+  }
 }
 
 function validateCells(key, cells) {

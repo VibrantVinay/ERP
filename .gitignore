@@ -29,3 +29,8 @@ storage/
 .vercel/
 .DS_Store
 Thumbs.db
+
+*.sqlite
+*.sqlite-*
+data/
+*/data/

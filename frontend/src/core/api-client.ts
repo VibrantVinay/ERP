@@ -31,17 +31,30 @@ export async function restClient<T>(
 ): Promise<T> {
   const url = `${clientConfig.apiUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
-  const defaultHeaders: HeadersInit = {
+  let token: string | null = null;
+  let activeBranch = clientConfig.branchId;
+
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('rift_token');
+    const storedBranch = localStorage.getItem('rift_branch');
+    if (storedBranch) activeBranch = storedBranch;
+  }
+
+  const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Restaurant-ID': clientConfig.restaurantId,
-    'X-Branch-ID': clientConfig.branchId,
+    'X-Branch-ID': activeBranch,
   };
+
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   const response = await fetch(url, {
     ...options,
     headers: {
       ...defaultHeaders,
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     },
   });
 
@@ -65,4 +78,3 @@ export async function restClient<T>(
 
   return payload.data;
 }
-

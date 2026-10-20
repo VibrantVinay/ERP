@@ -8,19 +8,36 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
     restaurantId: string;
-    branchId?: string;
+    branchId: string;
   };
 }
 
 export function tenantContextMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  // Extract or default tenant headers for dev/production flexibility
-  const restaurantId = (req.headers['x-restaurant-id'] as string) || 'default-restaurant';
-  const branchId = (req.headers['x-branch-id'] as string) || 'panaji-main';
+  const authHeader = req.headers.authorization;
+  let userId = 'usr_owner_01';
+  let email = 'aarav@rift.example';
+  let role = 'owner';
+  let restaurantId = (req.headers['x-restaurant-id'] as string) || 'rest_01';
+  let branchId = (req.headers['x-branch-id'] as string) || 'Panaji Main';
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const rawToken = authHeader.substring(7);
+    try {
+      const decoded = JSON.parse(Buffer.from(rawToken, 'base64').toString('utf8'));
+      if (decoded.sub) userId = decoded.sub;
+      if (decoded.email) email = decoded.email;
+      if (decoded.role) role = decoded.role;
+      if (decoded.restaurantId) restaurantId = decoded.restaurantId;
+      if (decoded.activeBranch) branchId = decoded.activeBranch;
+    } catch {
+      // invalid token will use defaults or trigger unauthorized in guard
+    }
+  }
 
   req.user = {
-    id: 'usr_owner_01',
-    email: 'admin@rift.example',
-    role: 'owner',
+    id: userId,
+    email,
+    role,
     restaurantId,
     branchId,
   };
@@ -45,4 +62,3 @@ export function globalErrorHandler(err: Error, req: Request, res: Response, next
   console.error('[Unhandled Error]', err);
   return sendError(res, 'Internal Server Error', 500, 'INTERNAL_SERVER_ERROR');
 }
-

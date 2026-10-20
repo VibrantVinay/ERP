@@ -138,3 +138,4 @@ async function bootstrapBaseTables(db: DatabaseAdapter): Promise<void> {
 
   await db.execute(createMetaTable);
 }
+

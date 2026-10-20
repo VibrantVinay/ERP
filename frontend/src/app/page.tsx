@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import { PosWorkspace } from '@/apps/pos/components/PosWorkspace';
 
 export default function HomePage() {
-  redirect('/pos');
+  return <PosWorkspace />;
 }
-

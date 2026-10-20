@@ -1,92 +1,182 @@
 # Rift · Restaurant ERP
 
-A local restaurant operations prototype with a warm cream, olive and dark green interface. It includes a point of sale, order and kitchen queue, table management, inventory, purchasing, guest CRM, staff, finance, reporting and administration routes.
+A decoupled, modular, enterprise-grade Restaurant ERP system built with **Next.js 14 & TypeScript** on the frontend and a **Django-inspired "pluggable battery" REST API architecture** in TypeScript on the backend.
 
-## Run locally
+---
 
-1. Install Node.js 20.6 or newer.
-2. Copy `.env.example` to `.env` and fill in the Supabase project URL and publishable/anon key.
-3. In this folder, run `npm start`.
-4. Open `http://127.0.0.1:4173` and sign in with an account created in Supabase Auth.
+## 1. Architecture Overview
 
-Use the local server rather than opening `index.html` directly. The app uses JavaScript modules, API routes and Supabase Auth cookies.
+Rift adopts the Django philosophy of **"batteries-included, plug-and-play apps"** across both backend and frontend:
 
-## Supabase setup
+```
+ERP/
+├── backend/                    # TypeScript REST API Server (Express + Pluggable Apps)
+│   ├── src/
+│   │   ├── apps/               # Independent domain battery apps
+│   │   │   ├── auth/           # App 1: Authentication, Sessions, PIN & Roles
+│   │   │   ├── pos/            # Point of Sale & Tax Calculations
+│   │   │   ├── orders/         # Order Register & Lifecycle
+│   │   │   ├── kitchen/        # Kitchen Display System (KDS) & KOT Routing
+│   │   │   ├── tables/         # Floor Plan & Dining Statuses
+│   │   │   ├── menu/           # Dishes, Categories & Availability
+│   │   │   └── inventory/      # Stock Levels, Batches & Alerts
+│   │   ├── core/               # AppRegistry, Database Adapter, Middleware, Errors
+│   │   ├── app.ts              # Express initialization & INSTALLED_APPS registry
+│   │   └── server.ts           # Server bootstrap
+│   └── data/                   # Local SQLite storage (auto-created)
+│
+├── frontend/                   # Next.js 14 App Router & TypeScript
+│   ├── src/
+│   │   ├── apps/               # Feature-sliced domain apps (mirroring backend 1:1)
+│   │   │   ├── auth/           # Login Portal, PIN Pad, AuthContext & Persona Switcher
+│   │   │   ├── pos/            # POS workspace & cart checkout
+│   │   │   ├── orders/         # Order register & status transitions
+│   │   │   ├── kitchen/        # KDS screen & prep bumping
+│   │   │   ├── tables/         # Visual table status & guest assignment
+│   │   │   ├── menu/           # Menu listings & 1-click availability toggling
+│   │   │   └── inventory/      # Stock take & low-stock alerts
+│   │   ├── app/                # Next.js App Router (thin route pages)
+│   │   ├── core/               # REST API Client, AppShell, Layout & Config
+│   │   └── styles/             # Warm cream, olive & dark green design system
+│
+├── requirement-target.md       # Comprehensive requirements specification for all 24 apps
+├── plan.md                     # Transformation plan & phased execution roadmap
+└── legacy/                     # Preserved legacy prototype files for reference
+```
 
-1. Create a Supabase project and run [`supabase/schema.sql`](supabase/schema.sql) in its SQL Editor.
-2. In Supabase Auth, invite/create the restaurant owner account. Public sign-ups are not provided by Rift.
-3. Copy the Project URL and publishable key (or legacy anon key) into `.env` as `SUPABASE_URL` and `SUPABASE_ANON_KEY`. Never use a `service_role` or secret key in this app.
-4. The first authenticated user gets a Rift restaurant workspace automatically. The app seeds sample restaurant records the first time that workspace is opened.
-5. To share the same restaurant with another Auth user, create/invite that user in Supabase Auth, then run this in the SQL Editor after replacing both UUIDs:
+---
 
-   ```sql
-   insert into public.restaurant_memberships (restaurant_id, user_id, role)
-   select restaurant_id, 'INVITED_USER_UUID', 'manager'
-   from public.restaurant_memberships
-   where user_id = 'OWNER_USER_UUID'
-   limit 1;
+## 2. Getting Started & Running Locally
+
+### Prerequisites
+- **Node.js**: v20.6 or newer (tested on Node v24).
+- **npm**: v10 or newer.
+
+### Installation
+
+1. **Install backend dependencies**:
+   ```bash
+   cd backend
+   npm install
    ```
 
-   The `/users` page is currently demo/configuration data and does not invite or authorize Supabase users.
+2. **Install frontend dependencies**:
+   ```bash
+   cd ../frontend
+   npm install
+   ```
 
-The SQL schema enables row-level security and scopes data to restaurant memberships. Auth sessions are stored in secure, HTTP-only cookies in production. API calls use the signed-in user's Supabase token and the public key; no service-role key is needed.
+### Running the Services
 
-## Deploy to GitHub and Vercel
+* **Start Backend Server** (Port `5000`):
+  ```bash
+  cd backend
+  npm run dev
+  ```
+  *REST API Base URL*: `http://localhost:5000/api/v1`
 
-1. Push the repository to GitHub. `.gitignore` excludes `.env`, `.vercel/`, local storage and dependencies; commit `.env.example`, never `.env`.
-2. In Vercel, import the GitHub repository. Select the **Other** framework preset and use the repository root. This is a static HTML/CSS/JavaScript app with a Node.js API function, not a Vite/React build.
-3. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` under the Vercel project's Environment Variables for Preview and Production, then deploy.
-4. In Supabase Auth URL Configuration, set the production Rift URL as the Site URL and add the Vercel preview/production URLs to the redirect allow list if you use email invitations.
-5. Open the deployment, sign in, and verify the POS and record create/edit flows. GitHub pushes to the production branch trigger Vercel redeployments.
+* **Start Frontend Application** (Port `3000`):
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+  *Web App Portal*: `http://localhost:3000`
 
-`vercel.json` sends client-side routes such as `/pos` back to `index.html`; `/api/*` is handled by the Vercel Node function in `api/[...path].js`.
+* **Root Monorepo Scripts** (from the `ERP/` root):
+  ```bash
+  npm run dev:backend    # Runs backend
+  npm run dev:frontend   # Runs frontend
+  ```
 
-## Restaurant routes
+---
 
-| Path | Workspace |
-| --- | --- |
-| `/dashboard` | Sales, active tickets, tables, inventory alerts and safety tasks |
-| `/pos` | Menu cart, order type, discount, sample GST, payment method and kitchen send |
-| `/orders` | Dine-in, takeaway, delivery and QR order register |
-| `/kitchen` | Station-based KOT/KDS queue, prep states and delayed ticket tracking |
-| `/tables` | Table availability, occupancy, reservations and waitlist |
-| `/reservations` | Guest bookings, deposits, party size and arrival status |
-| `/delivery` | Delivery zones, drivers, promised times and dispatch status |
-| `/menu` | Menu categories, pricing, modifiers, allergens and availability |
-| `/recipes` | Ingredient mapping, portion costs and margin records |
-| `/inventory` | Stock levels, reorder points, batch/expiry records and alerts |
-| `/suppliers` | Supplier directory, purchase orders, approvals and receiving |
-| `/stock-movements` | Waste, transfers, adjustments and count variance |
-| `/customers` | Customer profiles, visit history, segments and consent field |
-| `/loyalty` | Coupons, rewards, points and campaign records |
-| `/feedback` | Ratings, complaints, follow-up assignment and resolution |
-| `/staff` | Team, shifts, attendance, leave and payroll status |
-| `/tasks` | Cleaning, training, hygiene and temperature checks |
-| `/equipment` | Equipment maintenance, service schedules and repair costs |
-| `/finance` | Sales, expenses, supplier dues, taxes and reconciliation records |
-| `/reports` | Sales, menu margins, demand, branch and staff report catalogue |
-| `/branches` | Location records and branch-level sales indicators |
-| `/users` | User and role setup records |
-| `/audit` | Searchable local change history |
-| `/settings` | Restaurant profile, GST, hardware, payments, delivery links and alerts |
+## 3. Pluggable Database Configuration (SQLite ⇄ PostgreSQL)
 
-## Available interactions
+Rift ERP features a **unified database adapter** (`backend/src/core/database.ts`). You can switch between zero-config local SQLite and external cloud PostgreSQL simply by changing `DB_TYPE` in `backend/.env`.
 
-The workspaces support create, edit, delete, search, status filtering, workflow changes and CSV export. The POS supports dine-in/takeaway/delivery/QR orders, discounts, sample GST, payment method and kitchen tickets; orders can be split or merged. Restaurant records and audit events persist in Supabase. The app refreshes shared data every 15 seconds. Settings can export a JSON backup or restore starter demo records.
+### Option A: Local SQLite (Default)
+Ideal for local development with zero setup. Database files are stored automatically in `backend/data/rift.sqlite`:
+```env
+DB_TYPE=sqlite
+SQLITE_PATH=./data/rift.sqlite
+```
 
-## API
+### Option B: Cloud PostgreSQL (Supabase / Neon / AWS RDS / Render)
+To connect to an external PostgreSQL database, update `backend/.env`:
+```env
+DB_TYPE=postgres
+DATABASE_URL=postgresql://user:password@your-postgres-host:5432/dbname?sslmode=require
+```
+*(Or specify individual host parameters: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL`).*
 
-- `GET /api/health`, `/api/snapshot`, `/api/dashboard`, `/api/audit`
-- `GET /api/auth/session`, `POST /api/auth/login`, `POST /api/auth/logout`
-- `GET/POST /api/modules/:module/records`
-- `PUT/DELETE /api/modules/:module/records/:id`
-- `POST /api/demo/reset`
+---
 
-Data and integration values are examples. Payment terminals, online ordering platforms, printers, barcode scanners, customer messaging, payroll and GST filing are not connected. Roles in the `/users` area are demo records; restaurant membership controls data access, but per-role permissions and the invitation workflow are not yet implemented. Configure Supabase Auth users deliberately before sharing the deployment.
+## 4. App 1: Auth & Login Portal (`/login`)
 
-## Stack
+The authentication module (`backend/src/apps/auth` & `frontend/src/apps/auth`) is customized for restaurant operations:
 
-- Frontend: HTML, CSS and vanilla JavaScript ES modules.
-- Backend: Node.js HTTP server for local use and a Vercel Node function for deployment.
-- Database and authentication: Supabase Postgres, Auth and row-level security.
-- Fonts: Fraunces for headings and Nunito Sans for interface text.
+### Key Features
+1. **Dual Login Modes**:
+   - **Email & Password**: For management, owners, and accountants.
+   - **⚡ Staff Quick PIN Pad (4-Digit)**: Optimized for touch POS/KDS terminals during busy service hours.
+2. **Multi-Location / Branch Selector**:
+   - `Panaji Main (Fontainhas)`
+   - `Candolim Beach`
+   - `Margao Town`
+3. **1-Click Test Persona Switcher (Development & Testing)**:
+   The login portal footer includes one-click shortcuts to test each restaurant role:
+
+| Role | Name | Email | Default PIN | Operational Scope |
+|---|---|---|---|---|
+| **Owner** | Aarav Mehta | `aarav@rift.example` | `1111` | Full administrative control, all branches, settings |
+| **Manager** | Mina D’Souza | `mina@rift.example` | `2222` | Floor supervision, staff shifts, purchase approvals |
+| **Cashier** | Neha Verma | `neha@rift.example` | `3333` | Quick POS billing, payments, drawer settlement |
+| **Chef** | Samira Khan | `samira@rift.example` | `4444` | Kitchen Display System (KDS), line station routing |
+| **Server** | Ravi Naik | `ravi@rift.example` | `5555` | Table order taking, dining statuses, guest service |
+| **Driver** | Kabir Shah | `kabir@rift.example` | `6666` | Delivery dispatch queue, driver routing |
+| **Accountant** | Devendra Rao | `dev@rift.example` | `7777` | General ledger, supplier bills, tax reconciliation |
+
+*Default password for all seed accounts:* `password123`
+
+---
+
+## 5. How to Add a New Pluggable App (Django Pattern)
+
+Adding a new ERP feature follows a 3-step plug-and-play process:
+
+### Step 1: Create the Backend App (`backend/src/apps/<my_app>/`)
+Create a self-contained directory with:
+- `types.ts`: DTOs and database models.
+- `service.ts`: Core business logic and database queries via `getDb()`.
+- `controller.ts`: Express request/response handlers.
+- `routes.ts`: Express router defining REST endpoints.
+- `index.ts`: Exposes the `PluggableApp` definition.
+
+### Step 2: Register in `INSTALLED_APPS` (`backend/src/app.ts`)
+```typescript
+import { myNewApp } from './apps/my_new_app';
+
+export const INSTALLED_APPS = [
+  authApp,
+  posApp,
+  ordersApp,
+  kitchenApp,
+  tablesApp,
+  menuApp,
+  inventoryApp,
+  myNewApp, // <-- Plug in here!
+];
+```
+The server will automatically mount `/api/v1/my-new-app/*` on restart.
+
+### Step 3: Create the Frontend App (`frontend/src/apps/<my_app>/`)
+- `types.ts`: TypeScript interfaces matching backend DTOs.
+- `api.ts`: API client functions using `restClient()`.
+- `components/MyWorkspace.tsx`: Feature UI component.
+- `frontend/src/app/my-new-app/page.tsx`: Thin Next.js page wrapper mounting `<MyWorkspace />`.
+
+---
+
+## 6. Project Roadmap & Documentation
+- **[`requirement-target.md`](requirement-target.md)**: Full requirements and specifications for all 24 domain modules.
+- **[`plan.md`](plan.md)**: Multi-phase technical implementation plan.

@@ -9,8 +9,19 @@ const headers = {
 };
 
 function send(res, status, payload, extra = {}) {
-  res.writeHead(status, { ...headers, ...extra, 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(payload === undefined ? '' : JSON.stringify(payload));
+  try {
+    const allHeaders = { ...headers, ...extra, 'Content-Type': 'application/json; charset=utf-8' };
+    for (const [key, value] of Object.entries(allHeaders)) {
+      res.setHeader(key, value);
+    }
+    res.statusCode = status;
+    res.end(payload === undefined ? '' : JSON.stringify(payload));
+  } catch (e) {
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: 'Internal response error' }));
+    }
+  }
 }
 
 function cookies(req) {

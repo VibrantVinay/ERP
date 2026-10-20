@@ -2,3 +2,7 @@ node_modules/
 storage/
 *.tmp
 npm-debug.log*
+.vercel/
+.env
+.env.*
+!.env.example

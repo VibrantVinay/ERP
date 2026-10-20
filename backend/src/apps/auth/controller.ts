@@ -61,6 +61,15 @@ export class AuthController {
       next(err);
     }
   }
+
+  public async cleanUsers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.cleanAndResetUsers();
+      return sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const authController = new AuthController();

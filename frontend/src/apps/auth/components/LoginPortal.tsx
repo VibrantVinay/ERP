@@ -237,6 +237,30 @@ export function LoginPortal() {
               ⚡ 1-Click Role Switcher (Development & Testing)
             </span>
             <span style={{ fontSize: '0.75rem', color: '#cad8c9' }}>Default password: <code>password123</code></span>
+            <button
+              onClick={async () => {
+                if (confirm('Reset and clean users database to pristine default seed staff?')) {
+                  try {
+                    await authApi.cleanUsers();
+                    alert('Users table cleaned and reset successfully!');
+                    window.location.reload();
+                  } catch (e: any) {
+                    alert('Failed to clean users: ' + (e.message || e));
+                  }
+                }
+              }}
+              style={{
+                fontSize: '0.75rem',
+                color: '#fca5a5',
+                background: 'rgba(239,68,68,0.2)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                padding: '2px 8px',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              🧹 Reset Users DB
+            </button>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

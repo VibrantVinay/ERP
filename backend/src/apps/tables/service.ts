@@ -7,7 +7,7 @@ export class TableService {
     { id: 'tbl_2', tableNumber: '02', zone: 'Main room', seats: 4, party: 'Maya Patel · 2', seatedAt: '12:10', status: 'Ordering' },
     { id: 'tbl_3', tableNumber: '03', zone: 'Patio', seats: 4, party: 'Reserved · Rao party', seatedAt: '13:00', status: 'Reserved' },
     { id: 'tbl_4', tableNumber: '04', zone: 'Patio', seats: 6, party: 'Chen party · 4', seatedAt: '12:24', status: 'Dining' },
-    { id: 'tbl_5', tableNumber: '05', zone: 'Counter', seats: 2, party: '', seatedAt: '', status: 'Available' },
+    { id: 'tbl_5', tableNumber: '05', zone: 'Counter', seats: 2, party: '', seatedAt: '', status: 'Needs cleaning' },
   ];
 
   public getAll(zone?: string) {

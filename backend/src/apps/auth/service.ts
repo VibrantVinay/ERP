@@ -76,6 +76,15 @@ export const SEED_PERSONAS: DemoPersona[] = [
     branch: 'All branches',
     description: 'Invoicing, supplier balances, GST tax calculations',
   },
+  {
+    id: 'usr_cleaner_08',
+    name: 'Manoj Kumar',
+    email: 'manoj@rift.example',
+    role: 'cleaner',
+    pin: '8888',
+    branch: 'Panaji Main',
+    description: 'Table bussing, table reset, hygiene & floor sanitation',
+  },
 ];
 
 export class AuthService {
@@ -117,15 +126,11 @@ export class AuthService {
 
     await db.execute(createUsersTable);
 
-    // Seed default users if table is empty
-    const existing = await db.query('SELECT COUNT(*) as count FROM users');
-    const count = Number(existing[0]?.count || 0);
-
-    if (count === 0) {
-      console.log('[Auth] Seeding default restaurant staff personas into database...');
-      const defaultPasswordHash = this.hashPassword('password123');
-
-      for (const persona of SEED_PERSONAS) {
+    // Seed default personas (insert missing personas)
+    const defaultPasswordHash = this.hashPassword('password123');
+    for (const persona of SEED_PERSONAS) {
+      const userExists = await db.query('SELECT id FROM users WHERE email = ?', [persona.email]);
+      if (!userExists.length) {
         await db.execute(
           `INSERT INTO users (id, name, email, password_hash, pin, role, restaurant_id, branch_scope, active_branch)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -142,7 +147,6 @@ export class AuthService {
           ]
         );
       }
-      console.log(`[Auth] Seeded ${SEED_PERSONAS.length} restaurant staff personas successfully.`);
     }
   }
 
@@ -264,6 +268,16 @@ export class AuthService {
 
   public getDemoPersonas(): DemoPersona[] {
     return SEED_PERSONAS;
+  }
+
+  public async cleanAndResetUsers(): Promise<{ message: string; count: number }> {
+    const db = getDb();
+    await db.execute('DELETE FROM users');
+    await this.initDatabaseSchema();
+    return {
+      message: 'Users table cleaned and reset to pristine default restaurant personas.',
+      count: SEED_PERSONAS.length,
+    };
   }
 }
 

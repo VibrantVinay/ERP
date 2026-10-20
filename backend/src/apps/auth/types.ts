@@ -5,6 +5,7 @@ export type StaffRole =
   | 'chef'
   | 'server'
   | 'driver'
+  | 'cleaner'
   | 'accountant';
 
 export interface UserProfile {

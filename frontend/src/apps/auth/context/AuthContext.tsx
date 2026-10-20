@@ -9,6 +9,8 @@ export function getLandingRouteForRole(role?: string): string {
   switch (role) {
     case 'chef':
       return '/kitchen';
+    case 'cleaner':
+      return '/tables';
     case 'server':
     case 'cashier':
       return '/pos';

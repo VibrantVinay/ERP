@@ -135,8 +135,40 @@ The authentication module (`backend/src/apps/auth` & `frontend/src/apps/auth`) i
 | **Server** | Ravi Naik | `ravi@rift.example` | `5555` | Table order taking, dining statuses, guest service |
 | **Driver** | Kabir Shah | `kabir@rift.example` | `6666` | Delivery dispatch queue, driver routing |
 | **Accountant** | Devendra Rao | `dev@rift.example` | `7777` | General ledger, supplier bills, tax reconciliation |
+| **Cleaner / Busser** | Manoj Kumar | `manoj@rift.example` | `8888` | Table sanitation queue, dirty table reset & turnover |
 
 *Default password for all seed accounts:* `password123`
+
+---
+
+## 5. App 2: Point of Sale (POS) & Billing (`/pos`)
+
+The POS module (`backend/src/apps/pos` & `frontend/src/apps/pos`) provides a high-speed counter and tableside checkout:
+
+### Key Features
+* **Persistent Database Tickets (`pos_tickets`)**: Every ticket is written to the active database (SQLite/PostgreSQL) with item details, table number, server name, and financial totals.
+* **Dish Search & Fast Categories**: Instant text search by dish or ingredient note, with category filtering (*Small plates, Mains, Sides, Desserts, Drinks*).
+* **Cooking Notes**: Per-item kitchen instruction notes (*"Less spicy", "No onion"*).
+* **Indian Restaurant GST Calculation**: Accurate 5% GST calculated and split dynamically into **CGST (2.5%)** and **SGST (2.5%)**, with percentage discount handling.
+* **Payment Settlement Modal**: Settle orders via Cash (with **automatic cash change calculator**), Card, UPI (with QR code simulator), or Online.
+* **Equal Bill Splitter**: Split a check equally between 2 to 5 guests with sub-ticket generation (`GH-1048-A`, `GH-1048-B`).
+* **Printable Thermal Receipt**: Realistic monospace receipt layout with restaurant GSTIN, date/time, table number, itemized totals, and one-click `window.print()`.
+* **Active Service Tickets Drawer**: Slide-over queue of all open/unpaid tables for quick table recall and payment settlement.
+
+---
+
+## 6. Everything Implemented Till Now (Progress Summary)
+
+| Milestone | Component | What Was Built |
+|---|---|---|
+| **Architecture Conversion** | Decoupled Core | Split monolithic prototype into decoupled `backend/` (TypeScript REST API) and `frontend/` (Next.js 14 App Router & TypeScript) communicating via REST APIs. |
+| **Pluggable Architecture** | Django Pattern | Django-inspired `INSTALLED_APPS` and `AppRegistry` allowing self-contained apps to plug and play without cross-dependency breakage. |
+| **Pluggable Database** | Unified DB Adapter | Built `backend/src/core/database.ts` supporting **Local SQLite** (`better-sqlite3`) and **Cloud PostgreSQL** (`pg`) switchable via `DB_TYPE` in `.env`. |
+| **App 1: Auth Portal** | Authentication | Dual login (Email/Password & 4-digit PIN pad), multi-branch switcher, 8 restaurant staff personas, and token injection. |
+| **RBAC Portal Scoping** | Route Security | Dynamic sidebar navigation and `403 Restricted Access` route guards strictly scoping portals to Chef, Server, Cashier, Cleaner, Driver, and Manager/Owner. |
+| **App 2: POS & Billing** | Point of Sale | Touch cart, item notes, 5% GST (CGST+SGST), cash change calculator, UPI simulator, bill splitting, active tickets drawer, and printable receipts. |
+| **Table Cleaner Portal** | Floor Sanitation | Added dedicated **Table Cleaner / Busser (`cleaner`)** role with one-click table sanitation and dirty table turnover tracking. |
+| **Developer Ergonomics** | Concurrency & Cleaners | Single-command full-stack runner (`npm run dev`), cache cleaner (`npm run clean`), and database user reset script (`npm run clean:users`). |
 
 ---
 

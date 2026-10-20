@@ -36,5 +36,11 @@ export const authApi = {
       method: 'POST',
     });
   },
+
+  cleanUsers: async (): Promise<{ message: string; count: number }> => {
+    return restClient<{ message: string; count: number }>('/auth/clean-users', {
+      method: 'POST',
+    });
+  },
 };
 

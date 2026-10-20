@@ -42,6 +42,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
   chef: ['/kitchen', '/menu', '/inventory'],
+  cleaner: ['/tables'],
   server: ['/pos', '/tables'],
   cashier: ['/pos', '/orders'],
   driver: ['/orders'],
@@ -98,6 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       case 'chef': return { bg: '#fee2e2', text: '#b91c1c' };
       case 'cashier': return { bg: '#dcfce7', text: '#15803d' };
       case 'server': return { bg: '#f3e8ff', text: '#6b21a8' };
+      case 'cleaner': return { bg: '#ccfbf1', text: '#0f766e' };
       case 'driver': return { bg: '#ffedd5', text: '#c2410c' };
       case 'accountant': return { bg: '#ecfdf5', text: '#047857' };
       default: return { bg: '#e5e7eb', text: '#374151' };

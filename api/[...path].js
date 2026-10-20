@@ -1,17 +1,5 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "same-origin" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" }
-      ]
-    }
-  ],
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+import { handleSupabaseApi } from '../src/server/supabase-api.js';
+
+export default async function handler(request, response) {
+  return handleSupabaseApi(request, response);
 }

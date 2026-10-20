@@ -2,12 +2,57 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/apps/auth/context/AuthContext';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth, getLandingRouteForRole } from '@/apps/auth/context/AuthContext';
 import { LoginPortal } from '@/apps/auth/components/LoginPortal';
+import { StaffRole } from '@/apps/auth/types';
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: string;
+}
+
+interface NavGroup {
+  section: string;
+  items: NavItem[];
+}
+
+const ALL_NAV_GROUPS: NavGroup[] = [
+  {
+    section: 'Service & FOH',
+    items: [
+      { label: 'Point of Sale', href: '/pos', icon: '▤' },
+      { label: 'Orders', href: '/orders', icon: '↗' },
+      { label: 'Kitchen Display', href: '/kitchen', icon: '♨' },
+      { label: 'Tables & Floor', href: '/tables', icon: '▦' },
+    ],
+  },
+  {
+    section: 'Menu & Stock',
+    items: [
+      { label: 'Menu & Items', href: '/menu', icon: '▧' },
+      { label: 'Inventory & Stock', href: '/inventory', icon: '▣' },
+    ],
+  },
+];
+
+/**
+ * Strict Role-Based Access Control (RBAC) rules
+ */
+export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
+  chef: ['/kitchen', '/menu', '/inventory'],
+  server: ['/pos', '/tables'],
+  cashier: ['/pos', '/orders'],
+  driver: ['/orders'],
+  accountant: ['/orders', '/inventory', '/menu'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/menu', '/inventory'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/menu', '/inventory'],
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, token, loading, switchBranch, logout } = useAuth();
 
   // If on the root login portal or /login, render without sidebar/topbar
@@ -36,8 +81,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const getRoleBadgeColor = (role?: string) => {
-    switch (role) {
+  const role = (user.role || 'server') as StaffRole;
+  const allowedRoutes = ROLE_ALLOWED_ROUTES[role] || ['/pos'];
+  const isAuthorized = allowedRoutes.includes(pathname);
+
+  // Filter navigation groups according to active user's permissions
+  const visibleGroups = ALL_NAV_GROUPS.map(group => ({
+    section: group.section,
+    items: group.items.filter(item => allowedRoutes.includes(item.href)),
+  })).filter(group => group.items.length > 0);
+
+  const getRoleBadgeColor = (r: StaffRole) => {
+    switch (r) {
       case 'owner': return { bg: '#fef3c7', text: '#92400e' };
       case 'manager': return { bg: '#e0f2fe', text: '#0369a1' };
       case 'chef': return { bg: '#fee2e2', text: '#b91c1c' };
@@ -49,46 +104,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const roleStyle = getRoleBadgeColor(user?.role);
+  const roleStyle = getRoleBadgeColor(role);
 
   return (
     <div className="app-container">
-      {/* Main Navigation Sidebar */}
+      {/* Main Navigation Sidebar (Dynamic Role-Filtered) */}
       <aside className="sidebar">
         <div className="brand">
           <span>RIFT</span>
-          <small>ERP</small>
+          <small>{role.toUpperCase()}</small>
         </div>
 
-        <div className="nav-section-title">Service & FOH</div>
-        <Link href="/pos" className={`nav-link ${pathname === '/pos' ? 'active' : ''}`}>
-          <span>▤</span> Point of Sale
-        </Link>
-        <Link href="/orders" className={`nav-link ${pathname === '/orders' ? 'active' : ''}`}>
-          <span>↗</span> Orders
-        </Link>
-        <Link href="/kitchen" className={`nav-link ${pathname === '/kitchen' ? 'active' : ''}`}>
-          <span>♨</span> Kitchen Display
-        </Link>
-        <Link href="/tables" className={`nav-link ${pathname === '/tables' ? 'active' : ''}`}>
-          <span>▦</span> Tables & Floor
-        </Link>
-
-        <div className="nav-section-title">Menu & Stock</div>
-        <Link href="/menu" className={`nav-link ${pathname === '/menu' ? 'active' : ''}`}>
-          <span>▧</span> Menu & Items
-        </Link>
-        <Link href="/inventory" className={`nav-link ${pathname === '/inventory' ? 'active' : ''}`}>
-          <span>▣</span> Inventory & Stock
-        </Link>
+        {visibleGroups.map(group => (
+          <div key={group.section}>
+            <div className="nav-section-title">{group.section}</div>
+            {group.items.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`nav-link ${pathname === item.href ? 'active' : ''}`}
+              >
+                <span>{item.icon}</span> {item.label}
+              </Link>
+            ))}
+          </div>
+        ))}
 
         {/* Staff footer in sidebar */}
         <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ fontSize: '0.8rem', color: '#8fa08e' }}>
-            Branch: <strong style={{ color: '#fff' }}>{user?.activeBranch || 'Panaji Main'}</strong>
+            Branch: <strong style={{ color: '#fff' }}>{user.activeBranch || 'Panaji Main'}</strong>
           </div>
           <div style={{ fontSize: '0.75rem', color: '#cad8c9', marginTop: '0.2rem' }}>
-            {user?.name || 'Staff User'} ({user?.role?.toUpperCase() || 'OPERATOR'})
+            {user.name} ({role.toUpperCase()})
           </div>
         </div>
       </aside>
@@ -98,12 +146,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-              RIFT RESTAURANT WORKSPACE
+              RIFT · {role.toUpperCase()} WORKSPACE
             </span>
 
             {/* Branch Switcher */}
             <select
-              value={user?.activeBranch || 'Panaji Main'}
+              value={user.activeBranch || 'Panaji Main'}
               onChange={e => switchBranch(e.target.value)}
               style={{
                 fontSize: '0.8rem',
@@ -123,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {/* User Profile & Role Badge */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{user?.name}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{user.name}</div>
               <span
                 style={{
                   fontSize: '0.7rem',
@@ -135,7 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   borderRadius: 4,
                 }}
               >
-                {user?.role}
+                {role}
               </span>
             </div>
 
@@ -151,7 +199,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="page-container">{children}</div>
+        {/* Content Area with Unauthorized Route Guard */}
+        <div className="page-container">
+          {isAuthorized ? (
+            children
+          ) : (
+            <div className="card" style={{ maxWidth: '600px', margin: '3rem auto', textAlign: 'center', padding: '3rem 2rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔒</div>
+              <div className="eyebrow" style={{ color: 'var(--danger)' }}>403 · RESTRICTED ACCESS</div>
+              <h2 style={{ fontSize: '1.6rem', marginBottom: '0.75rem' }}>Portal Not Authorized</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                Your account (<strong>{user.name}</strong> · <span style={{ textTransform: 'capitalize' }}>{role}</span>) does not have permission to view <code>{pathname}</code>.
+              </p>
+              <button
+                onClick={() => router.push(getLandingRouteForRole(role))}
+                className="btn btn-primary"
+              >
+                Go to My Workspace ({getLandingRouteForRole(role)}) →
+              </button>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

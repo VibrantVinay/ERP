@@ -86,7 +86,7 @@ Supported 7 core roles:
 
 ## 3. Detailed Functional Modules & API Specifications
 
-### App 1: `auth` (Authentication & Sessions)
+### App 1: `auth` (Authentication & Sessions) DONE
 * **Entities**: `User`, `Session`, `RestaurantMembership`, `Role`
 * **Features**:
   * Secure sign-in with email/password.
@@ -100,6 +100,7 @@ Supported 7 core roles:
   * `POST /api/v1/auth/switch-branch`
 
 ---
+# DONE TILL THIS
 
 ### App 2: `pos` (Point of Sale)
 * **Entities**: `PosCart`, `PosTicket`, `PosDiscount`, `PosPaymentMethod`

@@ -5,6 +5,25 @@ import { useRouter } from 'next/navigation';
 import { UserProfile, DemoPersona } from '../types';
 import { authApi } from '../api';
 
+export function getLandingRouteForRole(role?: string): string {
+  switch (role) {
+    case 'chef':
+      return '/kitchen';
+    case 'server':
+    case 'cashier':
+      return '/pos';
+    case 'manager':
+    case 'owner':
+      return '/pos';
+    case 'driver':
+      return '/orders';
+    case 'accountant':
+      return '/orders';
+    default:
+      return '/pos';
+  }
+}
+
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
@@ -26,6 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function restoreSession() {
+      if (typeof window === 'undefined') {
+        setLoading(false);
+        return;
+      }
+
       const storedToken = localStorage.getItem('rift_token');
       if (storedToken) {
         setToken(storedToken);
@@ -34,52 +58,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(profile);
         } catch {
           localStorage.removeItem('rift_token');
+          localStorage.removeItem('rift_branch');
           setToken(null);
           setUser(null);
         }
       } else {
-        // Default guest persona for instant dev interaction
-        setUser({
-          id: 'usr_owner_01',
-          name: 'Aarav Mehta',
-          email: 'aarav@rift.example',
-          role: 'owner',
-          restaurantId: 'rest_01',
-          branchScope: 'All branches',
-          activeBranch: 'Panaji Main',
-          hasPin: true,
-        });
+        // Unauthenticated initial state
+        setToken(null);
+        setUser(null);
       }
       setLoading(false);
     }
     restoreSession();
   }, []);
 
-  const loginWithPassword = async (email: string, password?: string, branch?: string) => {
-    const res = await authApi.loginWithPassword(email, password, branch);
+  const handlePostLogin = (res: { token: string; user: UserProfile }) => {
     localStorage.setItem('rift_token', res.token);
     localStorage.setItem('rift_branch', res.user.activeBranch);
     setToken(res.token);
     setUser(res.user);
-    router.push('/pos');
+
+    // After action: dynamically route to role-appropriate workspace
+    const targetRoute = getLandingRouteForRole(res.user.role);
+    router.push(targetRoute);
+  };
+
+  const loginWithPassword = async (email: string, password?: string, branch?: string) => {
+    const res = await authApi.loginWithPassword(email, password, branch);
+    handlePostLogin(res);
   };
 
   const loginWithPin = async (pin: string, branch?: string) => {
     const res = await authApi.loginWithPin(pin, branch);
-    localStorage.setItem('rift_token', res.token);
-    localStorage.setItem('rift_branch', res.user.activeBranch);
-    setToken(res.token);
-    setUser(res.user);
-    router.push('/pos');
+    handlePostLogin(res);
   };
 
   const loginAsPersona = async (persona: DemoPersona) => {
-    const res = await authApi.loginWithPassword(persona.email, 'password123', persona.branch === 'All branches' ? 'Panaji Main' : persona.branch);
-    localStorage.setItem('rift_token', res.token);
-    localStorage.setItem('rift_branch', res.user.activeBranch);
-    setToken(res.token);
-    setUser(res.user);
-    router.push('/pos');
+    const res = await authApi.loginWithPassword(
+      persona.email,
+      'password123',
+      persona.branch === 'All branches' ? 'Panaji Main' : persona.branch
+    );
+    handlePostLogin(res);
   };
 
   const switchBranch = async (branch: string) => {
@@ -94,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('rift_branch');
     setToken(null);
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   return (

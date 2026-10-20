@@ -4,14 +4,36 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/apps/auth/context/AuthContext';
+import { LoginPortal } from '@/apps/auth/components/LoginPortal';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, switchBranch, logout } = useAuth();
+  const { user, token, loading, switchBranch, logout } = useAuth();
 
-  // If on login page, render plain without sidebar/topbar
-  if (pathname === '/login') {
+  // If on the root login portal or /login, render without sidebar/topbar
+  if (pathname === '/' || pathname === '/login') {
     return <>{children}</>;
+  }
+
+  // Session verification in progress
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--text-muted)' }}>
+        <p>Loading session...</p>
+      </div>
+    );
+  }
+
+  // If trying to access internal routes without authentication, render the login portal
+  if (!user || !token) {
+    return (
+      <div>
+        <div style={{ background: '#fef3c7', borderBottom: '1px solid #f59e0b', color: '#92400e', padding: '0.6rem 1rem', textAlign: 'center', fontSize: '0.85rem', fontWeight: 600 }}>
+          🔒 Authentication required. Please sign in to access the workspace.
+        </div>
+        <LoginPortal />
+      </div>
+    );
   }
 
   const getRoleBadgeColor = (role?: string) => {
@@ -21,6 +43,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       case 'chef': return { bg: '#fee2e2', text: '#b91c1c' };
       case 'cashier': return { bg: '#dcfce7', text: '#15803d' };
       case 'server': return { bg: '#f3e8ff', text: '#6b21a8' };
+      case 'driver': return { bg: '#ffedd5', text: '#c2410c' };
+      case 'accountant': return { bg: '#ecfdf5', text: '#047857' };
       default: return { bg: '#e5e7eb', text: '#374151' };
     }
   };
@@ -99,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {/* User Profile & Role Badge */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{user?.name || 'Aarav Mehta'}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{user?.name}</div>
               <span
                 style={{
                   fontSize: '0.7rem',
@@ -111,7 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   borderRadius: 4,
                 }}
               >
-                {user?.role || 'owner'}
+                {user?.role}
               </span>
             </div>
 
@@ -120,9 +144,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={logout}
               className="btn btn-outline"
               style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
-              title="Sign in as another persona"
+              title="Sign out and return to Login Portal"
             >
-              Switch User / Logout
+              Sign Out
             </button>
           </div>
         </header>

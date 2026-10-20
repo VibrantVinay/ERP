@@ -1,9 +1,8 @@
-import RootHomePage from '../page';
+'use client';
 
-export const metadata = {
-  title: 'Sign In · Rift Restaurant ERP',
-};
+import React from 'react';
+import { LoginPortal } from '@/apps/auth/components/LoginPortal';
 
 export default function LoginPage() {
-  return <RootHomePage />;
+  return <LoginPortal />;
 }

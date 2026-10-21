@@ -18,6 +18,7 @@ import { menuApp } from './apps/menu';
 import { inventoryApp } from './apps/inventory';
 import { suppliersApp } from './apps/suppliers';
 import { stockMovementsApp } from './apps/stock_movements';
+import { customersApp } from './apps/customers';
 
 export const INSTALLED_APPS = [
   authApp,
@@ -32,6 +33,7 @@ export const INSTALLED_APPS = [
   inventoryApp,
   suppliersApp,
   stockMovementsApp,
+  customersApp,
 ];
 
 export async function createApp(): Promise<Express> {

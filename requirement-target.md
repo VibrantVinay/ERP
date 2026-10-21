@@ -267,10 +267,6 @@ Supported 7 core roles:
   * `GET    /api/v1/stock-movements/variance-summary`
 
 ---
-# DONE TILL THIS
-
----
-
 ### App 13: `customers` (CRM & Guest Profiles)
 * **Entities**: `CustomerProfile`, `CustomerSegment`, `CustomerPreference`
 * **Features**:
@@ -283,6 +279,9 @@ Supported 7 core roles:
   * `GET    /api/v1/customers/:id`
   * `PUT    /api/v1/customers/:id`
   * `GET    /api/v1/customers/:id/history`
+
+---
+# DONE TILL THIS
 
 ---
 

@@ -212,3 +212,21 @@ The server will automatically mount `/api/v1/my-new-app/*` on restart.
 ## 6. Project Roadmap & Documentation
 - **[`requirement-target.md`](requirement-target.md)**: Full requirements and specifications for all 24 domain modules.
 - **[`plan.md`](plan.md)**: Multi-phase technical implementation plan.
+
+---
+
+## 7. App 25: Self-Service Kiosk, Offers Board & Customer Terminal Architecture
+
+Rift ERP features an isolated customer terminal access model for high-traffic self-service operations:
+
+### Key Components:
+1. **Self-Service Ordering Kiosk (`/kiosk`)**:
+   - Customer-facing ordering surface with authentic database menu items, dynamic category filtering, customizable item modifiers, tray calculation, and real-time coupon code validation.
+   - Payment options include simulated UPI QR Code, Card POS terminal, and Pay-at-Counter workflows.
+   - Idempotent order dispatch directly generates kitchen tickets (`K-XXX`) for line station routing.
+2. **Specials & Offers Display Board (`/offers-board`)**:
+   - Wall-mounted and counter digital signage display cycling active promotional campaigns, discounts, chef highlights, live clock, and kitchen preparation status.
+   - Fullscreen presentation mode for overhead TV screens.
+3. **Dedicated Customer Terminal Authentication (`/terminals`)**:
+   - Public-facing terminal session provider (`TerminalAuthContext`) keeping kiosk and offers board isolated from staff sessions and credentials.
+   - No staff login credentials required for customer self-service operation.

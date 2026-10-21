@@ -30,6 +30,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Delivery Dispatch', href: '/delivery', icon: '🛵' },
       { label: 'Customers & CRM', href: '/customers', icon: '👥' },
       { label: 'Promotions & Loyalty', href: '/loyalty', icon: '🎁' },
+      { label: 'Guest Feedback', href: '/feedback', icon: '💬' },
     ],
   },
   {
@@ -50,12 +51,12 @@ const ALL_NAV_GROUPS: NavGroup[] = [
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
   chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
   cleaner: ['/tables'],
-  server: ['/pos', '/tables', '/reservations', '/customers'],
-  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty'],
+  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback'],
+  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback'],
   driver: ['/delivery', '/orders'],
   accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {

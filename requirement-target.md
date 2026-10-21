@@ -294,10 +294,6 @@ Supported 7 core roles:
   * `GET    /api/v1/loyalty/members/:id`
 
 ---
-# DONE TILL THIS
-
----
-
 ### App 15: `feedback` (Guest Ratings & Care)
 * **Entities**: `GuestFeedback`, `ResolutionTicket`
 * **Features**:
@@ -309,6 +305,9 @@ Supported 7 core roles:
   * `POST   /api/v1/feedback`
   * `PATCH  /api/v1/feedback/:id/assign`
   * `PATCH  /api/v1/feedback/:id/resolve`
+
+---
+# DONE TILL THIS
 
 ---
 

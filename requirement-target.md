@@ -319,13 +319,6 @@ Supported 7 core roles:
   * `POST   /api/v1/staff/attendance/clock`
   * `GET    /api/v1/staff/payroll-summary`
 
----
-# DONE TILL THIS
-
----
-
----
-
 ### App 17: `tasks` (Food Safety & Operational Checklists)
 * **Entities**: `OperationalTask`, `SafetyChecklist`, `TemperatureLog`
 * **Features**:
@@ -337,6 +330,11 @@ Supported 7 core roles:
   * `POST   /api/v1/tasks`
   * `PATCH  /api/v1/tasks/:id/complete`
   * `POST   /api/v1/tasks/temperature-log`
+
+---
+# DONE TILL THIS
+
+---
 
 ---
 

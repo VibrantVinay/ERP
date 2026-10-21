@@ -47,6 +47,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
     section: 'Team & Operations',
     items: [
       { label: 'Staff & Shifts', href: '/staff', icon: '👔' },
+      { label: 'Checklists & Safety', href: '/tasks', icon: '📋' },
     ],
   },
 ];
@@ -55,14 +56,14 @@ const ALL_NAV_GROUPS: NavGroup[] = [
  * Strict Role-Based Access Control (RBAC) rules
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
-  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
-  cleaner: ['/tables', '/staff'],
-  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff'],
+  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks'],
+  cleaner: ['/tables', '/staff', '/tasks'],
+  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
   cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff'],
   driver: ['/delivery', '/orders', '/staff'],
   accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {

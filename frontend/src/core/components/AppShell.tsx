@@ -36,6 +36,7 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Menu & Items', href: '/menu', icon: '▧' },
       { label: 'Recipes (BOM)', href: '/recipes', icon: '🧾' },
       { label: 'Inventory & Stock', href: '/inventory', icon: '▣' },
+      { label: 'Suppliers & POs', href: '/suppliers', icon: '🏢' },
     ],
   },
 ];
@@ -44,14 +45,14 @@ const ALL_NAV_GROUPS: NavGroup[] = [
  * Strict Role-Based Access Control (RBAC) rules
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
-  chef: ['/kitchen', '/menu', '/recipes', '/inventory'],
+  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers'],
   cleaner: ['/tables'],
   server: ['/pos', '/tables', '/reservations'],
   cashier: ['/pos', '/orders', '/reservations', '/delivery'],
   driver: ['/delivery', '/orders'],
-  accountant: ['/orders', '/inventory', '/menu', '/recipes'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory'],
+  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory', '/suppliers'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory', '/suppliers'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {

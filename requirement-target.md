@@ -242,8 +242,6 @@ Supported 7 core roles:
   * `GET    /api/v1/inventory/locations`
 
 ---
-# DONE TILL THIS
-
 ### App 11: `suppliers` (Procurement & Purchasing)
 * **Entities**: `Supplier`, `PurchaseOrder`, `PurchaseOrderItem`, `GoodsReceipt`
 * **Features**:
@@ -255,6 +253,9 @@ Supported 7 core roles:
   * `GET    /api/v1/suppliers/orders`
   * `POST   /api/v1/suppliers/orders`
   * `PATCH  /api/v1/suppliers/orders/:id/status` (Approve, Order, Receive)
+
+---
+# DONE TILL THIS
 
 ---
 

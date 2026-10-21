@@ -331,13 +331,6 @@ Supported 7 core roles:
   * `PATCH  /api/v1/tasks/:id/complete`
   * `POST   /api/v1/tasks/temperature-log`
 
----
-# DONE TILL THIS
-
----
-
----
-
 ### App 18: `equipment` (Kitchen Asset Care)
 * **Entities**: `EquipmentAsset`, `MaintenanceSchedule`, `BreakdownTicket`
 * **Features**:
@@ -349,6 +342,11 @@ Supported 7 core roles:
   * `POST   /api/v1/equipment`
   * `POST   /api/v1/equipment/:id/maintenance`
   * `PATCH  /api/v1/equipment/:id/status`
+
+---
+# DONE TILL THIS
+
+---
 
 ---
 

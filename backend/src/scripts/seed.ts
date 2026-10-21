@@ -8,6 +8,7 @@ import { reservationService } from '../apps/reservations/service';
 import { deliveryService } from '../apps/delivery/service';
 import { recipeService } from '../apps/recipes/service';
 import { inventoryService } from '../apps/inventory/service';
+import { loyaltyService } from '../apps/loyalty/service';
 
 async function seedDatabase() {
   console.log('\n======================================================');
@@ -30,6 +31,7 @@ async function seedDatabase() {
   await deliveryService.initDatabaseSchema();
   await recipeService.initDatabaseSchema();
   await inventoryService.initDatabaseSchema();
+  await loyaltyService.initDatabaseSchema();
   console.log('[Schema] All schemas initialized.');
 
   console.log('\n[Cleaner] Purging existing data to avoid duplicates...');
@@ -167,6 +169,111 @@ async function seedDatabase() {
       price: 220,
       description: 'Cold-pressed lime juice, crushed fresh basil, organic raw cane sugar, sparkling soda',
       allergens: [],
+      availability: 'Available' as const,
+    },
+    // KFC / QSR Style Combos & Buckets
+    {
+      name: 'Rift Signature Fried Chicken Bucket (8 Pcs)',
+      category: 'Combos & Buckets',
+      price: 799,
+      description: '8 pcs hand-breaded golden crispy fried chicken with smoked garlic dip and sweet chilli glaze.',
+      allergens: ['Gluten', 'Eggs'],
+      availability: 'Available' as const,
+      modifierGroups: [
+        {
+          id: 'mod_spice_bucket',
+          name: 'Flavor / Spice Level',
+          minSelection: 1,
+          maxSelection: 1,
+          options: [
+            { id: 'opt_classic', name: 'Classic Crispy', priceDelta: 0 },
+            { id: 'opt_peri', name: 'Peri-Peri Dusted', priceDelta: 30 },
+            { id: 'opt_nashville', name: 'Nashville Fiery Hot', priceDelta: 50 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Hot & Fiery Wings Box (12 Pcs)',
+      category: 'Combos & Buckets',
+      price: 499,
+      description: '12 crispy wings tossed in fiery smokey BBQ or hot honey glaze with ranch dip.',
+      allergens: ['Gluten'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Ultimate Family Feast Box',
+      category: 'Combos & Buckets',
+      price: 1199,
+      description: '6 pcs fried chicken, 2 zinger burgers, large crinkle fries, 4 gourmet dips, and 2 craft drinks.',
+      allergens: ['Gluten', 'Dairy', 'Eggs'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Double Truffle Zinger Burger',
+      category: 'Burgers & Wraps',
+      price: 389,
+      description: 'Double crunchy spiced chicken fillet, melted gouda, black truffle mayo, butterhead lettuce in brioche.',
+      allergens: ['Gluten', 'Dairy', 'Eggs'],
+      availability: 'Available' as const,
+      modifierGroups: [
+        {
+          id: 'mod_cheese_extra',
+          name: 'Add Extra Melted Cheese',
+          minSelection: 0,
+          maxSelection: 1,
+          options: [
+            { id: 'opt_extra_cheddar', name: 'Warm Liquid Cheddar Dip', priceDelta: 40 },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Smoky BBQ Bacon Smash Burger',
+      category: 'Burgers & Wraps',
+      price: 449,
+      description: 'Two smashed tender patties, hickory smoked bacon, aged cheddar, caramelised onions, brioche.',
+      allergens: ['Gluten', 'Dairy'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Crispy Peri-Peri Paneer Crunch Burger',
+      category: 'Burgers & Wraps',
+      price: 299,
+      description: 'Crisp paneer steak coated in crunchy nachos, peri-peri drizzle, and spicy jalapeño slaw.',
+      allergens: ['Gluten', 'Dairy'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Truffle Parmesan Crinkle Cut Fries',
+      category: 'Small plates',
+      price: 199,
+      description: 'Crisp crinkle cut fries tossed in white truffle oil, shaved Grana Padano, and fresh parsley.',
+      allergens: ['Dairy'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Cheesy Jalapeño Popcorn Chicken',
+      category: 'Small plates',
+      price: 269,
+      description: 'Bite-sized crispy chicken pops smothered in molten warm cheddar cheese sauce & pickled jalapeños.',
+      allergens: ['Gluten', 'Dairy'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Lotus Biscoff Monster Shake',
+      category: 'Beverages',
+      price: 260,
+      description: 'Creamy vanilla ice cream blended with authentic Belgian Biscoff spread, crushed biscuits, whipped cream.',
+      allergens: ['Dairy', 'Gluten'],
+      availability: 'Available' as const,
+    },
+    {
+      name: 'Belgian Dark Chocolate Overload Shake',
+      category: 'Beverages',
+      price: 250,
+      description: '70% Callebaut dark chocolate, chocolate chip brownie crumble, rich chocolate fudge drizzle.',
+      allergens: ['Dairy', 'Gluten'],
       availability: 'Available' as const,
     },
   ];
@@ -311,6 +418,34 @@ async function seedDatabase() {
       payment: 'Unpaid' as const,
       status: 'Preparing' as const,
     },
+    {
+      ticket: 'K-101',
+      type: 'Takeaway' as const,
+      tableOrGuest: 'Self-Service Kiosk #01',
+      items: [
+        { id: 'k1', name: 'Rift Signature Fried Chicken Bucket (8 Pcs)', quantity: 1, unitPrice: 799, notes: 'Nashville Fiery Hot' },
+        { id: 'k2', name: 'Lotus Biscoff Monster Shake', quantity: 2, unitPrice: 260 },
+      ],
+      subtotal: 1319,
+      gstAmount: 65.95,
+      total: 1384.95,
+      payment: 'UPI' as const,
+      status: 'Preparing' as const,
+    },
+    {
+      ticket: 'K-102',
+      type: 'Dine-in' as const,
+      tableOrGuest: 'Self-Service Kiosk #02 · Table 06',
+      items: [
+        { id: 'k3', name: 'Double Truffle Zinger Burger', quantity: 2, unitPrice: 389, notes: 'Add Warm Liquid Cheddar' },
+        { id: 'k4', name: 'Truffle Parmesan Crinkle Cut Fries', quantity: 1, unitPrice: 199 },
+      ],
+      subtotal: 977,
+      gstAmount: 48.85,
+      total: 1025.85,
+      payment: 'Card' as const,
+      status: 'Ready' as const,
+    },
   ];
 
   for (const o of sampleOrders) {
@@ -381,6 +516,30 @@ async function seedDatabase() {
       items: [
         { id: 'kit_6', name: 'Classic Italian Tiramisu', quantity: 2, station: 'Dessert' as const, notes: '', isBumped: false },
         { id: 'kit_7', name: 'Dark Chocolate Fondant', quantity: 1, station: 'Dessert' as const, notes: 'With vanilla gelato', isBumped: false },
+      ],
+    },
+    {
+      ticketNumber: 'K-101',
+      tableNumber: 'Kiosk #01 (Takeaway)',
+      station: 'Hot line' as const,
+      priority: 'Rush' as const,
+      status: 'Preparing' as const,
+      receivedAt: new Date(Date.now() - 4 * 60000).toISOString(),
+      items: [
+        { id: 'kit_k1', name: 'Rift Signature Fried Chicken Bucket (8 Pcs)', quantity: 1, station: 'Hot line' as const, notes: 'Nashville Fiery Hot · 2 Dips', isBumped: false },
+        { id: 'kit_k2', name: 'Lotus Biscoff Monster Shake', quantity: 2, station: 'Bar' as const, notes: 'Takeaway cup with straw', isBumped: true, bumpedAt: new Date().toISOString() },
+      ],
+    },
+    {
+      ticketNumber: 'K-102',
+      tableNumber: 'Kiosk #02 · Table 06',
+      station: 'Hot line' as const,
+      priority: 'Normal' as const,
+      status: 'Ready' as const,
+      receivedAt: new Date(Date.now() - 11 * 60000).toISOString(),
+      items: [
+        { id: 'kit_k3', name: 'Double Truffle Zinger Burger', quantity: 2, station: 'Hot line' as const, notes: 'Warm Liquid Cheddar Sauce', isBumped: true, bumpedAt: new Date().toISOString() },
+        { id: 'kit_k4', name: 'Truffle Parmesan Crinkle Cut Fries', quantity: 1, station: 'Hot line' as const, notes: 'Extra seasoning', isBumped: true, bumpedAt: new Date().toISOString() },
       ],
     },
   ];
@@ -680,7 +839,112 @@ async function seedDatabase() {
     await inventoryService.createItem(item);
   }
 
-  // 12. Verification & Summary Report
+  // 12. Re-seed Active Promotions & Discounts (loyalty)
+  console.log('[Seed] 10/10 Populating Special Deals & Promotional Campaigns (loyalty)...');
+  await db.execute(`DELETE FROM promo_campaigns;`);
+  const campaigns = [
+    {
+      id: 'camp_flat20',
+      code: 'FLAT20',
+      title: '20% OFF Everything Above ₹499',
+      discount_type: 'percentage',
+      discount_value: 20,
+      min_spend: 499,
+      max_discount: 200,
+      usage_limit: 500,
+      used_count: 42,
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      is_active: 1,
+      branch_id: 'branch-south-01',
+    },
+    {
+      id: 'camp_feast150',
+      code: 'FEAST150',
+      title: 'Flat ₹150 OFF on Family Buckets & Combos',
+      discount_type: 'fixed',
+      discount_value: 150,
+      min_spend: 699,
+      max_discount: 150,
+      usage_limit: 300,
+      used_count: 88,
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      is_active: 1,
+      branch_id: 'branch-south-01',
+    },
+    {
+      id: 'camp_combo99',
+      code: 'COMBO99',
+      title: 'Meal Upgrade: Add Fries & Drink for ₹99',
+      discount_type: 'fixed',
+      discount_value: 99,
+      min_spend: 349,
+      max_discount: 99,
+      usage_limit: 1000,
+      used_count: 145,
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      is_active: 1,
+      branch_id: 'branch-south-01',
+    },
+    {
+      id: 'camp_happyhour',
+      code: 'HAPPYHOUR',
+      title: 'Happy Hour: 30% OFF Signature Cocktails & Shakes',
+      discount_type: 'percentage',
+      discount_value: 30,
+      min_spend: 300,
+      max_discount: 300,
+      usage_limit: 500,
+      used_count: 67,
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      is_active: 1,
+      branch_id: 'branch-south-01',
+    },
+    {
+      id: 'camp_sweettreat',
+      code: 'SWEET50',
+      title: '50% OFF on all Artisan Desserts',
+      discount_type: 'percentage',
+      discount_value: 50,
+      min_spend: 250,
+      max_discount: 175,
+      usage_limit: 200,
+      used_count: 31,
+      valid_from: '2026-01-01',
+      valid_to: '2026-12-31',
+      is_active: 1,
+      branch_id: 'branch-south-01',
+    },
+  ];
+
+  for (const c of campaigns) {
+    await db.execute(
+      `INSERT INTO promo_campaigns (
+        id, code, title, discount_type, discount_value, min_spend, max_discount,
+        usage_limit, used_count, valid_from, valid_to, is_active, branch_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        c.id,
+        c.code,
+        c.title,
+        c.discount_type,
+        c.discount_value,
+        c.min_spend,
+        c.max_discount,
+        c.usage_limit,
+        c.used_count,
+        c.valid_from,
+        c.valid_to,
+        c.is_active,
+        c.branch_id,
+      ]
+    );
+  }
+
+  // 13. Verification & Summary Report
   console.log('\n======================================================');
   console.log('✅  RIFT ERP SEED COMPLETE: SUMMARY REPORT');
   console.log('======================================================');
@@ -698,6 +962,7 @@ async function seedDatabase() {
     { label: 'Dishes with BOM Recipes (recipes)', table: 'recipes' },
     { label: 'Inventory Stock Items (inventory)', table: 'inventory_items' },
     { label: 'Inventory Tracked Batches (inventory)', table: 'inventory_batches' },
+    { label: 'Special Offers & Coupons (loyalty)', table: 'promo_campaigns' },
   ];
 
   const reportRows: any[] = [];

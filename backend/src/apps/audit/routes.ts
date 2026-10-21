@@ -9,3 +9,4 @@ router.get('/:id', (req, res) => auditController.getLogById(req, res));
 router.post('/', (req, res) => auditController.createLog(req, res));
 
 export default router;
+

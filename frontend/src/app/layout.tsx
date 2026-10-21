@@ -1,5 +1,6 @@
 import React from 'react';
 import { AuthProvider } from '@/apps/auth/context/AuthContext';
+import { TerminalAuthProvider } from '@/apps/terminals/context/TerminalAuthContext';
 import { AppShell } from '@/core/components/AppShell';
 import '../styles/globals.css';
 
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AuthProvider>
-          <AppShell>{children}</AppShell>
+          <TerminalAuthProvider>
+            <AppShell>{children}</AppShell>
+          </TerminalAuthProvider>
         </AuthProvider>
       </body>
     </html>

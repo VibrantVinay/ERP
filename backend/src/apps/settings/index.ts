@@ -11,3 +11,4 @@ export const settingsApp: PluggableApp = {
     await settingsService.initDatabaseSchema();
   },
 };
+

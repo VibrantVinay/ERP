@@ -104,6 +104,50 @@ export function LoginPortal() {
             </p>
           </div>
 
+          {/* Quick Customer Terminal Launch (No login required) */}
+          <div
+            style={{
+              marginBottom: '1.25rem',
+              padding: '0.75rem 1rem',
+              background: 'rgba(14, 165, 233, 0.08)',
+              border: '1px solid rgba(14, 165, 233, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0284c7', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>🖥️</span> Customer Terminal
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Self-Service Kiosk & Display (No login required)
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const termPersona = personas.find(p => p.role === 'customer_terminal') || DEFAULT_DEMO_PERSONAS.find(p => p.role === 'customer_terminal')!;
+                handlePersonaClick(termPersona);
+              }}
+              style={{
+                padding: '0.35rem 0.75rem',
+                background: '#0284c7',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Open →
+            </button>
+          </div>
+
           {/* Mode Switcher Tabs */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
             <button
@@ -299,32 +343,45 @@ export function LoginPortal() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {personas.map(p => (
-              <button
-                key={p.id}
-                onClick={() => handlePersonaClick(p)}
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.4rem 0.75rem',
-                  color: '#f7f5f0',
-                  textAlign: 'left',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'transparent'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
-              >
-                <strong style={{ textTransform: 'capitalize' }}>{p.role}:</strong>
-                <span>{p.name}</span>
-                <small style={{ opacity: 0.6 }}>PIN: {p.pin}</small>
-              </button>
-            ))}
+            {personas.map(p => {
+              const isTerminal = p.role === 'customer_terminal';
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handlePersonaClick(p)}
+                  style={{
+                    background: isTerminal ? 'rgba(14, 165, 233, 0.25)' : 'rgba(255,255,255,0.08)',
+                    border: isTerminal ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.4rem 0.75rem',
+                    color: '#f7f5f0',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = isTerminal ? '#0284c7' : 'var(--accent)';
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = isTerminal ? 'rgba(14, 165, 233, 0.25)' : 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.borderColor = isTerminal ? '#38bdf8' : 'rgba(255,255,255,0.15)';
+                  }}
+                >
+                  <strong style={{ textTransform: 'capitalize', color: isTerminal ? '#7dd3fc' : undefined }}>
+                    {isTerminal ? '🖥️ Customer Terminal:' : `${p.role}:`}
+                  </strong>
+                  <span>{p.name}</span>
+                  <small style={{ opacity: isTerminal ? 0.95 : 0.6, color: isTerminal ? '#38bdf8' : undefined, fontWeight: isTerminal ? 700 : undefined }}>
+                    {isTerminal ? 'NO LOGIN REQUIRED' : `PIN: ${p.pin}`}
+                  </small>
+                </button>
+              );
+            })}
           </div>
         </div>
       </footer>

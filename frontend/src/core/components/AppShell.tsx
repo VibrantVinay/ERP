@@ -68,16 +68,17 @@ const ALL_NAV_GROUPS: NavGroup[] = [
  * Strict Role-Based Access Control (RBAC) rules
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
-  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/reports'],
-  cleaner: ['/tables', '/staff', '/tasks', '/equipment'],
-  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
-  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff'],
-  driver: ['/delivery', '/orders', '/staff'],
-  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff', '/equipment', '/finance', '/reports', '/branches', '/audit'],
-  bartender: ['/pos', '/kitchen', '/menu', '/inventory', '/stock-movements', '/staff', '/tasks', '/equipment'],
-  host: ['/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings'],
+  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/reports', '/terminals', '/kiosk', '/offers-board'],
+  cleaner: ['/tables', '/staff', '/tasks', '/equipment', '/terminals', '/kiosk', '/offers-board'],
+  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks', '/terminals', '/kiosk', '/offers-board'],
+  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff', '/terminals', '/kiosk', '/offers-board'],
+  driver: ['/delivery', '/orders', '/staff', '/terminals', '/kiosk', '/offers-board'],
+  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff', '/equipment', '/finance', '/reports', '/branches', '/audit', '/terminals', '/kiosk', '/offers-board'],
+  bartender: ['/pos', '/kitchen', '/menu', '/inventory', '/stock-movements', '/staff', '/tasks', '/equipment', '/terminals', '/kiosk', '/offers-board'],
+  host: ['/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks', '/terminals', '/kiosk', '/offers-board'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings', '/terminals', '/kiosk', '/offers-board'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings', '/terminals', '/kiosk', '/offers-board'],
+  customer_terminal: ['/terminals', '/kiosk', '/offers-board'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -85,8 +86,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, token, loading, switchBranch, logout, loginAsPersona } = useAuth();
 
-  // If on the root login portal or /login, render without sidebar/topbar
-  if (pathname === '/' || pathname === '/login') {
+  // If on the root login portal, /login, or customer terminals (/terminals, /kiosk, /offers-board), render without staff sidebar/topbar
+  if (pathname === '/' || pathname === '/login' || pathname === '/terminals' || pathname === '/kiosk' || pathname === '/offers-board') {
     return <>{children}</>;
   }
 
@@ -133,6 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       case 'accountant': return { bg: '#ecfdf5', text: '#047857' };
       case 'bartender': return { bg: '#fef3c7', text: '#b45309' };
       case 'host': return { bg: '#fdf2f8', text: '#be185d' };
+      case 'customer_terminal': return { bg: '#e0e7ff', text: '#3730a3' };
       default: return { bg: '#e5e7eb', text: '#374151' };
     }
   };
@@ -282,27 +284,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
             {DEFAULT_DEMO_PERSONAS.map(p => {
               const isActive = user.role === p.role;
+              const isTerminal = p.role === 'customer_terminal';
               return (
                 <button
                   key={p.id}
                   onClick={() => loginAsPersona(p)}
                   style={{
-                    padding: '0.2rem 0.55rem',
+                    padding: isTerminal ? '0.2rem 0.65rem' : '0.2rem 0.55rem',
                     borderRadius: 4,
-                    border: isActive ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.15)',
-                    background: isActive ? '#10b981' : 'rgba(255,255,255,0.08)',
-                    color: '#fff',
+                    border: isTerminal
+                      ? (isActive ? '1px solid #38bdf8' : '1px solid rgba(56, 189, 248, 0.5)')
+                      : (isActive ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.15)'),
+                    background: isTerminal
+                      ? (isActive ? '#0284c7' : 'rgba(14, 165, 233, 0.25)')
+                      : (isActive ? '#10b981' : 'rgba(255,255,255,0.08)'),
+                    color: isTerminal ? '#e0f2fe' : '#fff',
                     fontSize: '0.72rem',
-                    fontWeight: 700,
+                    fontWeight: isTerminal ? 800 : 700,
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
-                  title={`Switch to ${p.name} (${p.role}) - PIN: ${p.pin}`}
+                  title={isTerminal ? 'Customer Terminal (No login credentials required)' : `Switch to ${p.name} (${p.role}) - PIN: ${p.pin}`}
                 >
-                  {p.role.toUpperCase()}
+                  {isTerminal ? '🖥️ CUSTOMER TERMINAL' : p.role.toUpperCase()}
                 </button>
               );
             })}

@@ -7,6 +7,8 @@ import { authApi } from '../api';
 
 export function getLandingRouteForRole(role?: string): string {
   switch (role) {
+    case 'customer_terminal':
+      return '/terminals';
     case 'chef':
       return '/kitchen';
     case 'cleaner':
@@ -34,6 +36,7 @@ interface AuthContextType {
   loginWithPassword: (email: string, password?: string, branch?: string) => Promise<void>;
   loginWithPin: (pin: string, branch?: string) => Promise<void>;
   loginAsPersona: (persona: DemoPersona) => Promise<void>;
+  loginAsCustomerTerminal: () => Promise<void>;
   switchBranch: (branch: string) => Promise<void>;
   logout: () => void;
 }
@@ -152,7 +155,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginAsCustomerTerminal = async () => {
+    handlePostLogin({
+      token: `demo_terminal_token_${Date.now()}`,
+      user: {
+        id: 'usr_terminal_01',
+        name: 'Customer Terminal',
+        email: 'terminal@rift.example',
+        role: 'customer_terminal',
+        restaurantId: 'rest_01',
+        branchScope: 'Panaji Main',
+        activeBranch: 'Panaji Main',
+        hasPin: false,
+      },
+    });
+  };
+
   const loginAsPersona = async (persona: DemoPersona) => {
+    if (persona.role === 'customer_terminal' || !persona.pin) {
+      await loginAsCustomerTerminal();
+      return;
+    }
+
     try {
       const res = await authApi.loginWithPassword(
         persona.email,
@@ -211,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithPassword,
         loginWithPin,
         loginAsPersona,
+        loginAsCustomerTerminal,
         switchBranch,
         logout,
       }}

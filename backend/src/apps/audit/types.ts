@@ -46,3 +46,4 @@ export interface AuditSummary {
   todayEvents: number;
   uniqueActors: number;
 }
+

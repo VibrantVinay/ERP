@@ -9,3 +9,4 @@ router.post('/test-printer', (req, res) => settingsController.testPrinter(req, r
 router.post('/test-webhook', (req, res) => settingsController.testWebhook(req, res));
 
 export default router;
+

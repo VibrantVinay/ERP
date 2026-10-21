@@ -11,3 +11,4 @@ router.put('/:id', (req, res) => branchController.updateBranch(req, res));
 router.delete('/:id', (req, res) => branchController.deleteBranch(req, res));
 
 export default router;
+

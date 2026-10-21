@@ -11,3 +11,4 @@ export const usersApp: PluggableApp = {
     await userService.initDatabaseSchema();
   },
 };
+

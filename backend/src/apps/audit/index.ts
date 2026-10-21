@@ -11,3 +11,4 @@ export const auditApp: PluggableApp = {
     await auditService.initDatabaseSchema();
   },
 };
+

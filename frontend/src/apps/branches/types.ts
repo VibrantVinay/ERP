@@ -54,3 +54,4 @@ export interface BranchSummary {
   totalFleetRevenue: number;
   totalFleetSeats: number;
 }
+

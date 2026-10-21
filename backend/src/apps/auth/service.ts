@@ -103,6 +103,15 @@ export const SEED_PERSONAS: DemoPersona[] = [
     branch: 'Panaji Main',
     description: 'Guest greetings, table allocation, reservations check-in',
   },
+  {
+    id: 'usr_terminal_01',
+    name: 'Customer Terminal',
+    email: 'terminal@rift.example',
+    role: 'customer_terminal',
+    pin: '',
+    branch: 'Panaji Main',
+    description: 'Customer Self-Service Kiosk & Display Terminal (No Credentials Required)',
+  },
 ];
 
 export class AuthService {
@@ -206,8 +215,8 @@ export class AuthService {
 
     const userRow = rows[0];
 
-    // Check password if provided (for dev convenience, allow standard password123 or check hash)
-    if (dto.password) {
+    // Check password if provided (customer_terminal role requires no password/credentials)
+    if (userRow.role !== 'customer_terminal' && dto.password) {
       const inputHash = this.hashPassword(dto.password);
       if (inputHash !== userRow.password_hash && dto.password !== 'password123') {
         throw new UnauthorizedError('Invalid email or password.');

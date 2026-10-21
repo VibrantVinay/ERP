@@ -11,3 +11,4 @@ export const branchesApp: PluggableApp = {
     await branchService.initDatabaseSchema();
   },
 };
+

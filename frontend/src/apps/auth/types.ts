@@ -8,7 +8,8 @@ export type StaffRole =
   | 'cleaner'
   | 'accountant'
   | 'bartender'
-  | 'host';
+  | 'host'
+  | 'customer_terminal';
 
 export interface UserProfile {
   id: string;
@@ -48,4 +49,5 @@ export const DEFAULT_DEMO_PERSONAS: DemoPersona[] = [
   { id: 'usr_acct_01', name: 'Neha Gupta', email: 'neha@rift.example', role: 'accountant', pin: '7777', branch: 'Panaji Main', description: 'Financial Accountant' },
   { id: 'usr_bar_01', name: 'Siddharth Rao', email: 'sid@rift.example', role: 'bartender', pin: '9999', branch: 'Panaji Main', description: 'Head Bartender & Mixologist' },
   { id: 'usr_host_01', name: 'Kavita Sen', email: 'kavita@rift.example', role: 'host', pin: '1234', branch: 'Panaji Main', description: 'Front Desk Hostess & Concierge' },
+  { id: 'usr_terminal_01', name: 'Customer Terminal', email: 'terminal@rift.example', role: 'customer_terminal', pin: '', branch: 'Panaji Main', description: 'Public Self-Service Kiosk & Displays (No Login Required)' },
 ];

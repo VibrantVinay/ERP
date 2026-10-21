@@ -8,7 +8,8 @@ export type StaffRole =
   | 'cleaner'
   | 'accountant'
   | 'bartender'
-  | 'host';
+  | 'host'
+  | 'customer_terminal';
 
 export interface UserProfile {
   id: string;

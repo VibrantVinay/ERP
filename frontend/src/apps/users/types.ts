@@ -38,3 +38,4 @@ export interface UserSummary {
   suspendedUsers: number;
   rolesCount: number;
 }
+

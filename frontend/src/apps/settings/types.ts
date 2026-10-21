@@ -41,3 +41,4 @@ export interface TestWebhookResponse {
   pingLatencyMs: number;
   timestamp: string;
 }
+

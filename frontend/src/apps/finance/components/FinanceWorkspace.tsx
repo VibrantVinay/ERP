@@ -57,9 +57,9 @@ export function FinanceWorkspace() {
         financeApi.getSummary(),
         financeApi.getTaxSummary(),
       ]);
-      setTransactions(txns);
-      setSummary(sum);
-      setTaxData(taxes);
+      setTransactions(txns || []);
+      setSummary(sum || null);
+      setTaxData(taxes || null);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch financial ledger');
     } finally {
@@ -124,30 +124,59 @@ export function FinanceWorkspace() {
     summary && summary.totalIncome > 0 ? Math.round((summary.netProfit / summary.totalIncome) * 100) : 0;
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minHeight: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            📊 Financial Ledger & Tax Accounting
-          </h1>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            General journal, card & UPI payment settlement, GST compliance reconciliation, and operating profit.
-          </p>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        paddingBottom: '0.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '42px',
+            height: '42px',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(16, 185, 129, 0.12)',
+            color: '#10b981',
+            fontSize: '1.25rem',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+          }}>
+            📊
+          </span>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+              Financial Ledger & Tax Accounting
+            </h1>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+              General ledger, multi-channel payment reconciliation, GST tax compliance, and restaurant net profit
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {selectedIds.length > 0 && (
             <button
               onClick={handleReconcileSelected}
               disabled={isReconciling}
               style={{
-                padding: '0.6rem 1rem',
-                backgroundColor: '#10b981',
-                color: '#fff',
+                padding: '0.6rem 1.1rem',
+                background: '#10b981',
+                color: '#ffffff',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.85rem',
                 fontWeight: 600,
                 cursor: isReconciling ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
               }}
             >
               ✓ Reconcile Selected ({selectedIds.length})
@@ -157,15 +186,17 @@ export function FinanceWorkspace() {
             onClick={() => setShowAddModal(true)}
             style={{
               padding: '0.6rem 1.2rem',
-              backgroundColor: 'var(--primary)',
-              color: '#fff',
+              background: 'linear-gradient(135deg, #f97316, #ea580c)',
+              color: '#ffffff',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
             }}
           >
             <span>+</span> Record Transaction
@@ -175,167 +206,243 @@ export function FinanceWorkspace() {
 
       {/* Metrics Banner */}
       {summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gross Revenue</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: '#16a34a' }}>
-              ${summary.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Food + Bar + Delivery revenue</div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.1rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+              Gross Revenue
+            </p>
+            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', margin: '0.35rem 0 0.15rem' }}>
+              ₹{summary.totalIncome.toLocaleString('en-IN')}
+            </p>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Dine-In, Takeaway, Bar & Delivery
+            </span>
           </div>
 
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Operating Expenses</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: '#dc2626' }}>
-              ${summary.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>COGS, wages, utilities, repairs</div>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.1rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+              Operating Expenses
+            </p>
+            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f87171', margin: '0.35rem 0 0.15rem' }}>
+              ₹{summary.totalExpenses.toLocaleString('en-IN')}
+            </p>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              COGS, payroll, utilities, vendor bills
+            </span>
           </div>
 
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Net Profit (Margin)</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: summary.netProfit >= 0 ? 'var(--text-primary)' : '#dc2626' }}>
-              ${summary.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '0.4rem' }}>({profitMargin}%)</span>
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>EBITDA baseline</div>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.1rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+              Net Profit (EBITDA)
+            </p>
+            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: summary.netProfit >= 0 ? 'var(--text)' : '#ef4444', margin: '0.35rem 0 0.15rem' }}>
+              ₹{summary.netProfit.toLocaleString('en-IN')}
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: summary.netProfit >= 0 ? '#10b981' : '#ef4444', marginLeft: '0.4rem' }}>
+                ({profitMargin}%)
+              </span>
+            </p>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Net operating margin
+            </span>
           </div>
 
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Net GST Liability</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: '#2563eb' }}>
-              ${summary.netGstPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Collected: ${summary.totalGstCollected.toFixed(0)} • ITC: -${summary.inputTaxCredit.toFixed(0)}
-            </div>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.1rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+              Net GST Liability
+            </p>
+            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#60a5fa', margin: '0.35rem 0 0.15rem' }}>
+              ₹{summary.netGstPayable.toLocaleString('en-IN')}
+            </p>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Collected: ₹{summary.totalGstCollected.toLocaleString('en-IN')} • ITC: -₹{summary.inputTaxCredit.toLocaleString('en-IN')}
+            </span>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => setActiveTab('ledger')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'ledger' ? '2px solid var(--primary)' : '2px solid transparent',
-            color: activeTab === 'ledger' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'ledger' ? 600 : 500,
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-          }}
-        >
-          📜 General Ledger Transactions ({transactions.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('taxes')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'taxes' ? '2px solid var(--primary)' : '2px solid transparent',
-            color: activeTab === 'taxes' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'taxes' ? 600 : 500,
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-          }}
-        >
-          🏛️ GST & Tax Schedule Breakdown
-        </button>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: '0.75rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => setActiveTab('ledger')}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'ledger' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'ledger' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'ledger' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            📜 General Ledger ({transactions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('taxes')}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'taxes' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'taxes' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'taxes' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🏛️ GST & Tax Schedule Breakdown
+          </button>
+        </div>
+
+        {activeTab === 'ledger' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <select
+              value={typeFilter}
+              onChange={e => setTypeFilter(e.target.value)}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text)',
+                padding: '0.35rem 0.65rem',
+                fontSize: '0.8rem',
+                outline: 'none',
+              }}
+            >
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+              <option value="refund">Refund</option>
+            </select>
+
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text)',
+                padding: '0.35rem 0.65rem',
+                fontSize: '0.8rem',
+                outline: 'none',
+              }}
+            >
+              <option value="all">All Categories</option>
+              <option value="food_sales">Food Sales</option>
+              <option value="beverage_sales">Beverage Sales</option>
+              <option value="supplier_invoice">Supplier Invoices</option>
+              <option value="payroll">Payroll</option>
+              <option value="utilities">Utilities</option>
+              <option value="equipment_maintenance">Equipment Maintenance</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text)',
+                padding: '0.35rem 0.65rem',
+                fontSize: '0.8rem',
+                outline: 'none',
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="reconciled">Reconciled</option>
+              <option value="completed">Pending Audit</option>
+            </select>
+
+            <button
+              onClick={handleSelectAllUnreconciled}
+              style={{
+                fontSize: '0.78rem',
+                padding: '0.35rem 0.75rem',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontWeight: 600,
+              }}
+            >
+              Select Unreconciled
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tab 1: Ledger */}
       {activeTab === 'ledger' && (
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
-          {/* Filters Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Type:</span>
-                <select
-                  value={typeFilter}
-                  onChange={e => setTypeFilter(e.target.value)}
-                  style={{ padding: '0.35rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
-                >
-                  <option value="all">All Types</option>
-                  <option value="income">Income</option>
-                  <option value="expense">Expense</option>
-                  <option value="refund">Refund</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Category:</span>
-                <select
-                  value={categoryFilter}
-                  onChange={e => setCategoryFilter(e.target.value)}
-                  style={{ padding: '0.35rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
-                >
-                  <option value="all">All Categories</option>
-                  <option value="food_sales">Food Sales</option>
-                  <option value="beverage_sales">Beverage Sales</option>
-                  <option value="supplier_invoice">Supplier Invoices</option>
-                  <option value="payroll">Payroll</option>
-                  <option value="utilities">Utilities</option>
-                  <option value="equipment_maintenance">Equipment Maintenance</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Status:</span>
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  style={{ padding: '0.35rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="reconciled">Reconciled</option>
-                  <option value="completed">Unreconciled / Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <button
-                onClick={handleSelectAllUnreconciled}
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '0.35rem 0.75rem',
-                  background: '#f1f5f9',
-                  border: '1px solid var(--border)',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  color: '#475569',
-                }}
-              >
-                Select All Pending Reconciliation
-              </button>
-            </div>
-          </div>
-
-          {/* Table */}
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-sm)',
+          overflow: 'hidden',
+        }}>
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading financial ledger...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              Loading financial ledger...
+            </div>
           ) : transactions.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>No transactions found.</p>
+            <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No transactions found matching filter criteria.
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', background: '#f8fafc' }}>
-                    <th style={{ padding: '0.75rem 0.5rem', width: '36px' }}></th>
-                    <th style={{ padding: '0.75rem' }}>Date & Ref</th>
-                    <th style={{ padding: '0.75rem' }}>Description</th>
-                    <th style={{ padding: '0.75rem' }}>Category</th>
-                    <th style={{ padding: '0.75rem' }}>Method</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>Amount</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>GST ({5}% / {18}%)</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Status</th>
+                  <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <th style={{ padding: '0.75rem 0.5rem', width: '36px', textAlign: 'center' }}></th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Date & Ref</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Description</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Category</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Payment Method</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Amount</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>GST ({5}% / {18}%)</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Audit Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -349,7 +456,8 @@ export function FinanceWorkspace() {
                         key={txn.id}
                         style={{
                           borderBottom: '1px solid var(--border)',
-                          background: isSelected ? '#f0fdf4' : 'transparent',
+                          background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                          color: 'var(--text)',
                         }}
                       >
                         <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
@@ -358,49 +466,55 @@ export function FinanceWorkspace() {
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleSelectTxn(txn.id)}
+                              style={{ cursor: 'pointer' }}
                             />
                           )}
                         </td>
-                        <td style={{ padding: '0.75rem' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
                           <div style={{ fontWeight: 600 }}>{txn.date}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{txn.referenceNumber || txn.id}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                            {txn.referenceNumber || txn.id}
+                          </div>
                         </td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <div style={{ fontWeight: 500 }}>{txn.description}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>By: {txn.recordedBy}</div>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div style={{ fontWeight: 600 }}>{txn.description}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Recorded: {txn.recordedBy}</div>
                         </td>
-                        <td style={{ padding: '0.75rem' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
                           <span
                             style={{
-                              fontSize: '0.75rem',
-                              padding: '0.2rem 0.5rem',
+                              fontSize: '0.72rem',
+                              padding: '0.15rem 0.5rem',
                               borderRadius: '4px',
-                              background: '#e0e7ff',
-                              color: '#3730a3',
+                              background: 'rgba(59, 130, 246, 0.1)',
+                              color: '#60a5fa',
+                              border: '1px solid rgba(59, 130, 246, 0.25)',
                               textTransform: 'capitalize',
+                              fontWeight: 600,
                             }}
                           >
                             {txn.category.replace('_', ' ')}
                           </span>
                         </td>
-                        <td style={{ padding: '0.75rem', textTransform: 'capitalize' }}>
+                        <td style={{ padding: '0.75rem 1rem', textTransform: 'capitalize', color: 'var(--text-muted)' }}>
                           {txn.paymentMethod.replace('_', ' ')}
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 700, color: isIncome ? '#16a34a' : '#dc2626' }}>
-                          {isIncome ? '+' : '-'}${txn.amount.toFixed(2)}
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: isIncome ? '#10b981' : '#f87171' }}>
+                          {isIncome ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-muted)' }}>
-                          ${txn.taxAmount.toFixed(2)} <span style={{ fontSize: '0.75rem' }}>({txn.gstRate}%)</span>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: 'var(--text-muted)' }}>
+                          ₹{txn.taxAmount.toLocaleString('en-IN')} <span style={{ fontSize: '0.7rem' }}>({txn.gstRate}%)</span>
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                           <span
                             style={{
-                              fontSize: '0.75rem',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '9999px',
                               fontWeight: 600,
-                              background: isReconciled ? '#dcfce7' : '#fef3c7',
-                              color: isReconciled ? '#15803d' : '#b45309',
+                              background: isReconciled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                              color: isReconciled ? '#10b981' : '#f59e0b',
+                              border: `1px solid ${isReconciled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                               textTransform: 'capitalize',
                             }}
                           >
@@ -419,56 +533,78 @@ export function FinanceWorkspace() {
 
       {/* Tab 2: GST & Taxes */}
       {activeTab === 'taxes' && taxData && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 600 }}>🏛️ GST Rate Schedule & Output Liability</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem', alignItems: 'start' }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
+              🏛️ GST Rate Schedule & Output Liability
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ padding: '1rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>5% GST: Restaurant Dine-In & Takeaway</span>
-                  <span style={{ fontWeight: 700, color: '#16a34a' }}>${taxData.diningGst5.toFixed(2)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>5% GST: Restaurant Food Service & Takeaway</span>
+                  <span style={{ fontWeight: 700, color: '#10b981', fontSize: '1rem' }}>₹{taxData.diningGst5.toLocaleString('en-IN')}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Gross Turn: ${taxData.diningGrossSales.toFixed(2)} (Standard food service)
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Gross Turn: ₹{taxData.diningGrossSales.toLocaleString('en-IN')} (Standard food dining)
                 </div>
               </div>
 
-              <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border)' }}>
+              <div style={{ padding: '1rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>18% GST: Alcoholic Beverages & Premium Bar</span>
-                  <span style={{ fontWeight: 700, color: '#16a34a' }}>${taxData.alcoholGst18.toFixed(2)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>18% GST: Alcoholic Beverages & Bar Events</span>
+                  <span style={{ fontWeight: 700, color: '#10b981', fontSize: '1rem' }}>₹{taxData.alcoholGst18.toLocaleString('en-IN')}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  Gross Turn: ${taxData.alcoholGrossSales.toFixed(2)} (Spirits, wine, beer, cocktail events)
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Gross Turn: ₹{taxData.alcoholGrossSales.toLocaleString('en-IN')} (Spirits, cocktails, cellar)
                 </div>
               </div>
 
-              <div style={{ borderTop: '2px solid var(--border)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1.05rem' }}>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem', color: 'var(--text)' }}>
                 <span>Total Output GST Collected:</span>
-                <span>${taxData.totalGstCollected.toFixed(2)}</span>
+                <span style={{ color: '#10b981' }}>₹{taxData.totalGstCollected.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
 
-          <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 600 }}>🛡️ Input Tax Credit (ITC) & Net Settlement</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.25rem',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
+              🛡️ Input Tax Credit (ITC) & Net Settlement
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ padding: '1rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 600, color: '#15803d' }}>Input Tax Credit (ITC Offset)</span>
-                  <span style={{ fontWeight: 700, color: '#15803d' }}>-${taxData.eligibleInputCredit.toFixed(2)}</span>
+                  <span style={{ fontWeight: 600, color: '#10b981' }}>Input Tax Credit (ITC Offset)</span>
+                  <span style={{ fontWeight: 700, color: '#10b981', fontSize: '1rem' }}>-₹{taxData.eligibleInputCredit.toLocaleString('en-IN')}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#166534', marginTop: '0.25rem' }}>
-                  Verified supplier procurement invoices, commercial gas, and equipment repair tax offsets.
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Verified supplier procurement invoices, commercial LPG, and equipment maintenance tax offsets.
                 </div>
               </div>
 
-              <div style={{ padding: '1.25rem', background: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
-                <div style={{ fontSize: '0.85rem', color: '#1e40af', textTransform: 'uppercase', fontWeight: 600 }}>Final Net Tax Payable</div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1d4ed8', marginTop: '0.25rem' }}>
-                  ${taxData.netTaxDue.toFixed(2)}
+              <div style={{ padding: '1.25rem', background: 'rgba(59, 130, 246, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+                <div style={{ fontSize: '0.78rem', color: '#60a5fa', textTransform: 'uppercase', fontWeight: 700 }}>Final Net Tax Payable</div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#3b82f6', marginTop: '0.25rem' }}>
+                  ₹{taxData.netTaxDue.toLocaleString('en-IN')}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#1e40af', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
                   Ready for electronic GST filing for {taxData.period}.
                 </div>
               </div>
@@ -479,17 +615,49 @@ export function FinanceWorkspace() {
 
       {/* Modal: Record Transaction */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '500px', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.2rem', fontWeight: 600 }}>Record Financial Ledger Transaction</h3>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '500px',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.5rem',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>
+              Record Financial Ledger Transaction
+            </h3>
             <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Transaction Type</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Transaction Type
+                  </label>
                   <select
                     value={newType}
                     onChange={e => setNewType(e.target.value as TransactionType)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="expense">Expense (Payout / Bill)</option>
                     <option value="income">Income (Sales Revenue)</option>
@@ -497,11 +665,23 @@ export function FinanceWorkspace() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Category</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Category
+                  </label>
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value as TransactionCategory)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="supplier_invoice">Supplier Invoice</option>
                     <option value="food_sales">Food Sales</option>
@@ -516,7 +696,9 @@ export function FinanceWorkspace() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Amount ($) *</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Amount (₹) *
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -524,15 +706,39 @@ export function FinanceWorkspace() {
                     placeholder="0.00"
                     value={newAmount}
                     onChange={e => setNewAmount(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)', fontSize: '1.05rem', fontWeight: 600 }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '1.05rem',
+                      fontWeight: 700,
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>GST Rate (%)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    GST Rate (%)
+                  </label>
                   <select
                     value={newGstRate}
                     onChange={e => setNewGstRate(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="5">5% (Dining)</option>
                     <option value="18">18% (Alcohol / Ops)</option>
@@ -543,13 +749,25 @@ export function FinanceWorkspace() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Payment Method</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Payment Method
+                  </label>
                   <select
                     value={newMethod}
                     onChange={e => setNewMethod(e.target.value as PaymentMethod)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
-                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="bank_transfer">Bank Transfer (NEFT/RTGS)</option>
                     <option value="credit_card">Credit Card POS</option>
                     <option value="upi_qr">UPI / QR Code</option>
                     <option value="cash">Cash Register</option>
@@ -557,26 +775,50 @@ export function FinanceWorkspace() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Reference / Invoice #</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Reference / Invoice #
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. INV-2024-991"
                     value={newRef}
                     onChange={e => setNewRef(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Description *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Description *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Wholesale dairy delivery payment"
                   value={newDesc}
                   onChange={e => setNewDesc(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
@@ -584,13 +826,32 @@ export function FinanceWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.5rem 1.25rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  }}
                 >
                   Post to Ledger
                 </button>
@@ -602,4 +863,3 @@ export function FinanceWorkspace() {
     </div>
   );
 }
-

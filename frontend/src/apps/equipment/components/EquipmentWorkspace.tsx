@@ -61,9 +61,9 @@ export function EquipmentWorkspace() {
         }),
         equipmentApi.getBreakdownTickets(),
       ]);
-      setEquipment(eqData);
-      setTickets(ticketData);
-      if (eqData.length > 0 && !selectedEquipId) {
+      setEquipment(eqData || []);
+      setTickets(ticketData || []);
+      if (eqData && eqData.length > 0 && !selectedEquipId) {
         setSelectedEquipId(eqData[0].id);
       }
     } catch (err: any) {
@@ -157,16 +157,6 @@ export function EquipmentWorkspace() {
     }
   }
 
-  // Quick status toggle
-  async function handleStatusChange(id: string, status: EquipmentStatus) {
-    try {
-      await equipmentApi.updateStatus(id, status);
-      await loadData();
-    } catch (err: any) {
-      alert(`Error updating status: ${err.message}`);
-    }
-  }
-
   // Metrics
   const totalAssets = equipment.length;
   const operationalAssets = equipment.filter(e => e.status === 'operational').length;
@@ -175,31 +165,57 @@ export function EquipmentWorkspace() {
   const totalCost = tickets.reduce((sum, t) => sum + (t.serviceCost || 0), 0);
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minHeight: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-            ⚙️ Kitchen Equipment Care & Maintenance
-          </h1>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Preventive service scheduling, breakdown dispatch, warranty tracking, and kitchen asset health.
-          </p>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        paddingBottom: '0.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '42px',
+            height: '42px',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(59, 130, 246, 0.12)',
+            color: '#3b82f6',
+            fontSize: '1.25rem',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+          }}>
+            ⚙️
+          </span>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+              Kitchen Equipment Care & Maintenance
+            </h1>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+              Preventive maintenance cycles, emergency breakdown dispatches, warranty tracking, and kitchen uptime
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={() => setShowBreakdownModal(true)}
             style={{
-              padding: '0.6rem 1rem',
-              backgroundColor: '#ef4444',
-              color: '#fff',
+              padding: '0.6rem 1.1rem',
+              background: '#dc2626',
+              color: '#ffffff',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '0.4rem',
+              boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
             }}
           >
             <span>🚨</span> Report Breakdown
@@ -208,15 +224,17 @@ export function EquipmentWorkspace() {
             onClick={() => setShowAddModal(true)}
             style={{
               padding: '0.6rem 1.2rem',
-              backgroundColor: 'var(--primary)',
-              color: '#fff',
+              background: 'linear-gradient(135deg, #f97316, #ea580c)',
+              color: '#ffffff',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
             }}
           >
             <span>+</span> Add Equipment
@@ -225,87 +243,145 @@ export function EquipmentWorkspace() {
       </div>
 
       {/* Metrics Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fleet Health & Uptime</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: uptime >= 90 ? '#10b981' : '#f59e0b' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '1rem',
+      }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Kitchen Fleet Health
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: uptime >= 90 ? '#10b981' : '#f59e0b', margin: '0.35rem 0 0.15rem' }}>
             {uptime}% <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)' }}>({operationalAssets}/{totalAssets} online)</span>
-          </div>
-          <div style={{ marginTop: '0.5rem', background: '#e2e8f0', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
+          </p>
+          <div style={{ marginTop: '0.5rem', background: 'var(--bg)', borderRadius: '9999px', height: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
             <div style={{ width: `${uptime}%`, height: '100%', background: uptime >= 90 ? '#10b981' : '#f59e0b', transition: 'width 0.3s' }} />
           </div>
         </div>
 
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Breakdown Tickets</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: activeBreakdowns > 0 ? '#ef4444' : '#10b981' }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Active Breakdown Tickets
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: activeBreakdowns > 0 ? '#ef4444' : '#10b981', margin: '0.35rem 0 0.15rem' }}>
             {activeBreakdowns} {activeBreakdowns > 0 ? 'Action Required' : 'All Clear'}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Under repair or waiting tech</div>
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Under active repair or technician dispatch
+          </span>
         </div>
 
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Maintenance Spend</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
-            ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Parts & specialized technician labour</div>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Total Maintenance Cost
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f87171', margin: '0.35rem 0 0.15rem' }}>
+            ₹{totalCost.toLocaleString('en-IN')}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Parts, technician labor & PM service
+          </span>
         </div>
 
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.2rem' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active User</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            On-Duty Manager
+          </p>
+          <p style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)', margin: '0.35rem 0 0.15rem' }}>
             {user?.name || 'Chef Operations'}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', textTransform: 'capitalize' }}>Role: {user?.role || 'staff'}</div>
+          </p>
+          <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, textTransform: 'capitalize' }}>
+            ● Verified Active Session
+          </span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => setActiveTab('assets')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'assets' ? '2px solid var(--primary)' : '2px solid transparent',
-            color: activeTab === 'assets' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'assets' ? 600 : 500,
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-          }}
-        >
-          🏭 Asset Fleet Inventory ({equipment.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('tickets')}
-          style={{
-            padding: '0.75rem 1.25rem',
-            border: 'none',
-            background: 'none',
-            borderBottom: activeTab === 'tickets' ? '2px solid var(--primary)' : '2px solid transparent',
-            color: activeTab === 'tickets' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'tickets' ? 600 : 500,
-            cursor: 'pointer',
-            fontSize: '0.95rem',
-          }}
-        >
-          🚨 Breakdown & Repair Tickets ({tickets.length})
-        </button>
-      </div>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: '0.75rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => setActiveTab('assets')}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'assets' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'assets' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'assets' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🏭 Equipment Catalog ({equipment.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('tickets')}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'tickets' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'tickets' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'tickets' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🚨 Breakdown & Repair Tickets ({tickets.length})
+          </button>
+        </div>
 
-      {/* Tab 1: Asset Catalog */}
-      {activeTab === 'assets' && (
-        <div>
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Category:</span>
+        {activeTab === 'assets' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Category:</span>
               <select
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(e.target.value)}
-                style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text)',
+                  padding: '0.35rem 0.65rem',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                }}
               >
                 <option value="all">All Categories</option>
                 <option value="Cooking">Cooking & Heat</option>
@@ -316,12 +392,20 @@ export function EquipmentWorkspace() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Status:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status:</span>
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text)',
+                  padding: '0.35rem 0.65rem',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                }}
               >
                 <option value="all">All Statuses</option>
                 <option value="operational">Operational</option>
@@ -331,16 +415,40 @@ export function EquipmentWorkspace() {
               </select>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Asset Grid */}
+      {/* Tab 1: Asset Catalog */}
+      {activeTab === 'assets' && (
+        <div>
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading kitchen equipment...</div>
+            <div style={{
+              padding: '3rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              background: 'var(--surface)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+            }}>
+              Loading kitchen equipment catalog...
+            </div>
           ) : equipment.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>No equipment assets found.</p>
+            <div style={{
+              padding: '2.5rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              background: 'var(--surface)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+            }}>
+              No equipment assets found matching criteria.
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+              gap: '1rem',
+            }}>
               {equipment.map(item => {
                 const isOp = item.status === 'operational';
                 const isUnderRepair = item.status === 'under_repair';
@@ -350,34 +458,36 @@ export function EquipmentWorkspace() {
                   <div
                     key={item.id}
                     style={{
-                      background: 'var(--card-bg, #fff)',
-                      border: `1px solid ${isUnderRepair ? '#f87171' : isNeedsMaint ? '#fcd34d' : 'var(--border)'}`,
-                      borderRadius: '8px',
+                      background: 'var(--surface)',
+                      border: `1px solid ${isUnderRepair ? 'rgba(239, 68, 68, 0.4)' : isNeedsMaint ? 'rgba(245, 158, 11, 0.4)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-md)',
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                      boxShadow: 'var(--shadow-sm)',
+                      gap: '0.85rem',
                     }}
                   >
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                         <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
                             {item.category} • {item.location}
                           </div>
-                          <h3 style={{ margin: '0.25rem 0 0.5rem', fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <h3 style={{ margin: '0.25rem 0 0.35rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)' }}>
                             {item.name}
                           </h3>
                         </div>
                         <span
                           style={{
-                            fontSize: '0.75rem',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
+                            fontSize: '0.72rem',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '9999px',
                             fontWeight: 600,
-                            background: isOp ? '#dcfce7' : isUnderRepair ? '#fee2e2' : '#fef3c7',
-                            color: isOp ? '#15803d' : isUnderRepair ? '#b91c1c' : '#b45309',
+                            background: isOp ? 'rgba(16, 185, 129, 0.12)' : isUnderRepair ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: isOp ? '#10b981' : isUnderRepair ? '#ef4444' : '#f59e0b',
+                            border: `1px solid ${isOp ? 'rgba(16, 185, 129, 0.3)' : isUnderRepair ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                             textTransform: 'capitalize',
                           }}
                         >
@@ -386,25 +496,46 @@ export function EquipmentWorkspace() {
                       </div>
 
                       {item.serialNumber && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                          Serial: <code>{item.serialNumber}</code>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          Serial: <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>{item.serialNumber}</span>
                         </div>
                       )}
 
-                      <div style={{ marginTop: '0.75rem', padding: '0.6rem', background: '#f8fafc', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                        <div>Last Service: <strong>{item.lastServiceDate || 'N/A'}</strong></div>
-                        <div>Next Due: <strong style={{ color: '#d97706' }}>{item.nextServiceDate || 'N/A'}</strong> (every {item.serviceIntervalDays}d)</div>
-                        {item.technicianContact && <div>Support: {item.technicianContact}</div>}
+                      <div style={{
+                        marginTop: '0.75rem',
+                        padding: '0.65rem',
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.78rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Last Service:</span>
+                          <strong style={{ color: 'var(--text)' }}>{item.lastServiceDate || 'N/A'}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Next Due:</span>
+                          <strong style={{ color: '#f59e0b' }}>{item.nextServiceDate || 'N/A'} (every {item.serviceIntervalDays}d)</strong>
+                        </div>
+                        {item.technicianContact && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.25rem', borderTop: '1px solid var(--border)' }}>
+                            <span style={{ color: 'var(--text-muted)' }}>Tech Support:</span>
+                            <span style={{ color: 'var(--text)', fontWeight: 500 }}>{item.technicianContact}</span>
+                          </div>
+                        )}
                       </div>
 
                       {item.notes && (
-                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                           "{item.notes}"
                         </p>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
                       <button
                         onClick={() => {
                           setPmEquipId(item.id);
@@ -416,9 +547,9 @@ export function EquipmentWorkspace() {
                           fontSize: '0.8rem',
                           fontWeight: 600,
                           backgroundColor: '#10b981',
-                          color: '#fff',
+                          color: '#ffffff',
                           border: 'none',
-                          borderRadius: '5px',
+                          borderRadius: 'var(--radius-sm)',
                           cursor: 'pointer',
                         }}
                       >
@@ -434,10 +565,10 @@ export function EquipmentWorkspace() {
                           padding: '0.45rem 0.75rem',
                           fontSize: '0.8rem',
                           fontWeight: 600,
-                          backgroundColor: '#ef4444',
-                          color: '#fff',
+                          backgroundColor: '#dc2626',
+                          color: '#ffffff',
                           border: 'none',
-                          borderRadius: '5px',
+                          borderRadius: 'var(--radius-sm)',
                           cursor: 'pointer',
                         }}
                       >
@@ -454,10 +585,18 @@ export function EquipmentWorkspace() {
 
       {/* Tab 2: Breakdown Tickets */}
       {activeTab === 'tickets' && (
-        <div style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.25rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Kitchen Asset Breakdown Log</h3>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sorted newest first</span>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)' }}>
+              Kitchen Asset Breakdown Log
+            </h3>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sorted newest first</span>
           </div>
 
           {tickets.length === 0 ? (
@@ -471,10 +610,10 @@ export function EquipmentWorkspace() {
                   <div
                     key={ticket.id}
                     style={{
-                      border: `1px solid ${ticket.priority === 'urgent' && !isResolved ? '#f87171' : 'var(--border)'}`,
-                      borderRadius: '8px',
+                      border: `1px solid ${ticket.priority === 'urgent' && !isResolved ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-sm)',
                       padding: '1rem',
-                      background: ticket.priority === 'urgent' && !isResolved ? '#fef2f2' : 'transparent',
+                      background: ticket.priority === 'urgent' && !isResolved ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg)',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -484,29 +623,31 @@ export function EquipmentWorkspace() {
                   >
                     <div style={{ flex: 1, minWidth: '280px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>
                           {ticket.equipmentName}
                         </span>
                         <span
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.72rem',
                             padding: '0.15rem 0.5rem',
                             borderRadius: '4px',
-                            fontWeight: 600,
-                            background: ticket.priority === 'urgent' ? '#fee2e2' : '#fef3c7',
-                            color: ticket.priority === 'urgent' ? '#b91c1c' : '#b45309',
+                            fontWeight: 700,
+                            background: ticket.priority === 'urgent' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                            color: ticket.priority === 'urgent' ? '#ef4444' : '#f59e0b',
+                            border: `1px solid ${ticket.priority === 'urgent' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                           }}
                         >
                           {ticket.priority.toUpperCase()}
                         </span>
                         <span
                           style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.72rem',
                             padding: '0.15rem 0.5rem',
                             borderRadius: '4px',
                             fontWeight: 600,
-                            background: isResolved ? '#dcfce7' : '#e0e7ff',
-                            color: isResolved ? '#15803d' : '#3730a3',
+                            background: isResolved ? 'rgba(16, 185, 129, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                            color: isResolved ? '#10b981' : '#60a5fa',
+                            border: `1px solid ${isResolved ? 'rgba(16, 185, 129, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
                             textTransform: 'capitalize',
                           }}
                         >
@@ -514,14 +655,14 @@ export function EquipmentWorkspace() {
                         </span>
                       </div>
 
-                      <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                         {ticket.issueDescription}
                       </p>
 
-                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                        <span>Reported by: <strong>{ticket.reportedBy}</strong></span>
-                        {ticket.technicianName && <span>Assigned Tech: <strong>{ticket.technicianName}</strong></span>}
-                        {ticket.serviceCost ? <span>Cost: <strong style={{ color: '#059669' }}>${ticket.serviceCost.toFixed(2)}</strong></span> : null}
+                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                        <span>Reported by: <strong style={{ color: 'var(--text)' }}>{ticket.reportedBy}</strong></span>
+                        {ticket.technicianName && <span>Assigned Tech: <strong style={{ color: 'var(--text)' }}>{ticket.technicianName}</strong></span>}
+                        {ticket.serviceCost ? <span>Cost: <strong style={{ color: '#10b981' }}>₹{ticket.serviceCost.toLocaleString('en-IN')}</strong></span> : null}
                         {ticket.partsReplaced && <span>Parts: <em>{ticket.partsReplaced}</em></span>}
                       </div>
                     </div>
@@ -536,18 +677,19 @@ export function EquipmentWorkspace() {
                           style={{
                             padding: '0.5rem 1rem',
                             backgroundColor: '#10b981',
-                            color: '#fff',
+                            color: '#ffffff',
                             border: 'none',
-                            borderRadius: '6px',
+                            borderRadius: 'var(--radius-md)',
                             fontWeight: 600,
                             cursor: 'pointer',
-                            fontSize: '0.85rem',
+                            fontSize: '0.82rem',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
                           }}
                         >
                           Mark Resolved
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
                           ✓ Resolved {ticket.resolvedAt ? `(${ticket.resolvedAt.slice(0, 10)})` : ''}
                         </span>
                       )}
@@ -562,29 +704,73 @@ export function EquipmentWorkspace() {
 
       {/* Modal: Add Equipment */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '500px', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.2rem', fontWeight: 600 }}>Register New Kitchen Asset</h3>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '500px',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.5rem',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>
+              Register New Kitchen Asset
+            </h3>
             <form onSubmit={handleAddEquipment} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Equipment Name *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Equipment Name *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Rational iCombi Pro 6-Grid"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Category</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Category
+                  </label>
                   <select
                     value={newCategory}
                     onChange={e => setNewCategory(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="Cooking">Cooking</option>
                     <option value="Refrigeration">Refrigeration</option>
@@ -594,48 +780,97 @@ export function EquipmentWorkspace() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Location</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Location *
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Line Station 1"
                     value={newLocation}
                     onChange={e => setNewLocation(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Serial Number</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Serial Number
+                  </label>
                   <input
                     type="text"
                     placeholder="SN-XXXX"
                     value={newSerial}
                     onChange={e => setNewSerial(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Service Cycle (Days)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Service Cycle (Days)
+                  </label>
                   <input
                     type="number"
                     value={newInterval}
                     onChange={e => setNewInterval(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Authorized Technician / Support Contact</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Authorized Technician / Support Contact
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. Hobart Support (+1-800-555-1234)"
+                  placeholder="e.g. Hobart Support (+91 98200 12345)"
                   value={newTechContact}
                   onChange={e => setNewTechContact(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
@@ -643,13 +878,32 @@ export function EquipmentWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.5rem 1.25rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  }}
                 >
                   Save Asset
                 </button>
@@ -661,16 +915,48 @@ export function EquipmentWorkspace() {
 
       {/* Modal: Report Breakdown */}
       {showBreakdownModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '450px', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 600, color: '#dc2626' }}>🚨 Report Equipment Breakdown</h3>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '450px',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.5rem',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: '#dc2626' }}>
+              🚨 Report Equipment Breakdown
+            </h3>
             <form onSubmit={handleCreateBreakdown} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Select Impacted Asset *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Select Impacted Asset *
+                </label>
                 <select
                   value={selectedEquipId}
                   onChange={e => setSelectedEquipId(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 >
                   {equipment.map(eq => (
                     <option key={eq.id} value={eq.id}>
@@ -681,11 +967,23 @@ export function EquipmentWorkspace() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Urgency Level</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Urgency Level
+                </label>
                 <select
                   value={ticketPriority}
                   onChange={e => setTicketPriority(e.target.value as MaintenancePriority)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 >
                   <option value="low">Low (Non-urgent cosmetic)</option>
                   <option value="medium">Medium (Reduced capacity)</option>
@@ -695,14 +993,27 @@ export function EquipmentWorkspace() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Issue Description & Symptoms *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Issue Description & Symptoms *
+                </label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="Describe error code, strange noise, failure to heat/cool..."
+                  placeholder="Describe error code, smell, noise, or malfunction..."
                   value={issueDesc}
                   onChange={e => setIssueDesc(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
@@ -710,13 +1021,32 @@ export function EquipmentWorkspace() {
                 <button
                   type="button"
                   onClick={() => setShowBreakdownModal(false)}
-                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.5rem 1.25rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: '#dc2626',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                  }}
                 >
                   Dispatch Ticket
                 </button>
@@ -728,41 +1058,98 @@ export function EquipmentWorkspace() {
 
       {/* Modal: Log PM Service */}
       {pmEquipId && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '450px', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 600 }}>Log Preventive Maintenance (PM)</h3>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '450px',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.5rem',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>
+              Log Preventive Maintenance (PM)
+            </h3>
             <form onSubmit={handleLogPM} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Technician / Vendor Name *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Technician / Engineer Name *
+                </label>
                 <input
                   type="text"
                   required
                   value={pmTechName}
                   onChange={e => setPmTechName(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Service Cost ($)</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Service Invoiced Cost (₹)
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={pmCost}
                   onChange={e => setPmCost(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Service Check Details</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Maintenance Summary & Notes
+                </label>
                 <textarea
                   rows={2}
-                  placeholder="Filter replaced, seals sanitized, calibration complete..."
+                  placeholder="e.g. Descaled boiler, replaced door seals, greased bearings"
                   value={pmNotes}
                   onChange={e => setPmNotes(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
@@ -770,15 +1157,34 @@ export function EquipmentWorkspace() {
                 <button
                   type="button"
                   onClick={() => setPmEquipId(null)}
-                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.5rem 1.25rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  }}
                 >
-                  Verify PM & Reset Cycle
+                  Record PM Service
                 </button>
               </div>
             </form>
@@ -786,56 +1192,123 @@ export function EquipmentWorkspace() {
         </div>
       )}
 
-      {/* Modal: Resolve Ticket */}
+      {/* Modal: Resolve Breakdown Ticket */}
       {resolvingTicketId && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '450px', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 600 }}>Resolve Breakdown Ticket</h3>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            width: '100%',
+            maxWidth: '450px',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1.5rem',
+            border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>
+              Complete Repair & Resolve Ticket
+            </h3>
             <form onSubmit={handleResolveTicket} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Servicing Technician *</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Servicing Technician *
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Kevin Patel (Apex Tech)"
                   value={resolveTech}
                   onChange={e => setResolveTech(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Invoice Cost ($)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="150.00"
-                    value={resolveCost}
-                    onChange={e => setResolveCost(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Parts Replaced</label>
-                  <input
-                    type="text"
-                    placeholder="Gasket, Solenoid..."
-                    value={partsUsed}
-                    onChange={e => setPartsUsed(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Total Repair / Invoice Cost (₹)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={resolveCost}
+                  onChange={e => setResolveCost(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 500 }}>Resolution Notes</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Parts / Components Replaced
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Thermocouple, Magnetron, Filter element"
+                  value={partsUsed}
+                  onChange={e => setPartsUsed(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Resolution Notes & Verification
+                </label>
                 <textarea
                   rows={2}
-                  placeholder="Diagnostic observations, warranty coverage..."
+                  placeholder="e.g. Test cycle ran 45 mins with load, zero leakage observed"
                   value={resolveNotes}
                   onChange={e => setResolveNotes(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card-bg)' }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
@@ -843,15 +1316,34 @@ export function EquipmentWorkspace() {
                 <button
                   type="button"
                   onClick={() => setResolvingTicketId(null)}
-                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '0.5rem 1.25rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  }}
                 >
-                  Confirm & Reopen Machine
+                  Verify & Resolve Ticket
                 </button>
               </div>
             </form>
@@ -861,4 +1353,3 @@ export function EquipmentWorkspace() {
     </div>
   );
 }
-

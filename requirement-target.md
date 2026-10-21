@@ -343,13 +343,6 @@ Supported 7 core roles:
   * `POST   /api/v1/equipment/:id/maintenance`
   * `PATCH  /api/v1/equipment/:id/status`
 
----
-# DONE TILL THIS
-
----
-
----
-
 ### App 19: `finance` (Finance & Accounting Ledger)
 * **Entities**: `FinancialTransaction`, `Invoice`, `SupplierBill`, `TaxReconciliation`
 * **Features**:
@@ -361,6 +354,11 @@ Supported 7 core roles:
   * `POST   /api/v1/finance/transactions`
   * `GET    /api/v1/finance/summary`
   * `POST   /api/v1/finance/reconcile`
+
+---
+# DONE TILL THIS
+
+---
 
 ---
 

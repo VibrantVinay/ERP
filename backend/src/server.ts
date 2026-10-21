@@ -15,7 +15,7 @@ async function bootstrap() {
     app.listen(config.port, () => {
       console.log(`🚀 Rift ERP Backend running on http://localhost:${config.port}`);
       console.log(`📡 REST API base prefix: ${config.apiPrefix}`);
-      console.log(`🔌 Battery Apps registered: auth, pos, orders, kitchen, tables, reservations, delivery, recipes, menu, inventory, suppliers, stock_movements, customers, loyalty, feedback, staff, tasks, equipment\n`);
+      console.log(`🔌 Battery Apps registered: auth, pos, orders, kitchen, tables, reservations, delivery, recipes, menu, inventory, suppliers, stock_movements, customers, loyalty, feedback, staff, tasks, equipment, finance\n`);
     });
   } catch (error) {
     console.error('Fatal error starting Rift backend server:', error);

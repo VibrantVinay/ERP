@@ -125,6 +125,9 @@ export class StaffService {
       { id: 'stf_05', name: 'Neha Verma', role: 'cashier', phone: '98201 33333', email: 'neha@rift.example', hourlyWage: 200 },
       { id: 'stf_06', name: 'Kabir Shah', role: 'driver', phone: '98201 66666', email: 'kabir@rift.example', hourlyWage: 160 },
       { id: 'stf_07', name: 'Manoj Kumar', role: 'cleaner', phone: '98201 88888', email: 'manoj@rift.example', hourlyWage: 150 },
+      { id: 'stf_08', name: 'Devendra Rao', role: 'accountant', phone: '98201 77777', email: 'dev@rift.example', hourlyWage: 340 },
+      { id: 'stf_09', name: 'Siddharth Rao', role: 'bartender', phone: '98201 99999', email: 'sid@rift.example', hourlyWage: 220 },
+      { id: 'stf_10', name: 'Kavita Sen', role: 'host', phone: '98201 12345', email: 'kavita@rift.example', hourlyWage: 190 },
     ];
 
     for (const s of staffSeed) {
@@ -401,3 +404,4 @@ export class StaffService {
 }
 
 export const staffService = new StaffService();
+

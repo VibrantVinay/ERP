@@ -61,3 +61,4 @@ export interface LogTemperatureDTO {
   recordedBy: string;
   notes?: string;
 }
+

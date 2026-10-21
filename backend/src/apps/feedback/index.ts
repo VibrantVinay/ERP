@@ -11,3 +11,4 @@ export const feedbackApp: PluggableApp = {
     await feedbackService.initDatabaseSchema();
   },
 };
+

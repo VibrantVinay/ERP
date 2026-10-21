@@ -76,3 +76,4 @@ export interface AdjustPointsDto {
   orderTicket?: string;
   description: string;
 }
+

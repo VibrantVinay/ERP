@@ -11,3 +11,4 @@ export const tasksApp: PluggableApp = {
     await tasksService.initDatabaseSchema();
   },
 };
+

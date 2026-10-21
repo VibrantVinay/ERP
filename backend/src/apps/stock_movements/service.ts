@@ -313,3 +313,4 @@ export class StockMovementService {
 }
 
 export const stockMovementService = new StockMovementService();
+

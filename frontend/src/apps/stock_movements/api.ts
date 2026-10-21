@@ -26,3 +26,4 @@ export const stockMovementApi = {
     return res.data;
   },
 };
+

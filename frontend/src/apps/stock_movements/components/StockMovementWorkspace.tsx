@@ -424,3 +424,4 @@ export const StockMovementWorkspace: React.FC = () => {
     </div>
   );
 };
+

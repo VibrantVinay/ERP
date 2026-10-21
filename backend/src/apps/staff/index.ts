@@ -11,3 +11,4 @@ export const staffApp: PluggableApp = {
     await staffService.initDatabaseSchema();
   },
 };
+

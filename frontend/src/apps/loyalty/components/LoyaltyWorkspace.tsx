@@ -557,3 +557,4 @@ export const LoyaltyWorkspace: React.FC = () => {
     </div>
   );
 };
+

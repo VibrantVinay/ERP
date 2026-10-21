@@ -60,3 +60,4 @@ export class LoyaltyController {
 }
 
 export const loyaltyController = new LoyaltyController();
+

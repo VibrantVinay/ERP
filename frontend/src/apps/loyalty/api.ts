@@ -36,3 +36,4 @@ export const loyaltyApi = {
     return res.data;
   },
 };
+

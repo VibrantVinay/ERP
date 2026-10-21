@@ -13,3 +13,4 @@ supplierRouter.patch('/orders/:id/status', (req, res, next) => supplierControlle
 supplierRouter.get('/', (req, res, next) => supplierController.getSuppliers(req, res, next));
 supplierRouter.post('/', (req, res, next) => supplierController.createSupplier(req, res, next));
 supplierRouter.get('/:id', (req, res, next) => supplierController.getSupplierById(req, res, next));
+

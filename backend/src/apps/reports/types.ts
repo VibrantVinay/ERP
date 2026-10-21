@@ -69,3 +69,4 @@ export interface ExportRequestDTO {
   format: 'csv' | 'json';
   period?: string;
 }
+

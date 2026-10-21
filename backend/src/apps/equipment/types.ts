@@ -70,3 +70,4 @@ export interface ResolveTicketDTO {
   partsReplaced?: string;
   notes?: string;
 }
+

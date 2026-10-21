@@ -58,3 +58,4 @@ export interface FeedbackSummaryMetrics {
   escalatedCount: number;
   positivePercentage: number;
 }
+

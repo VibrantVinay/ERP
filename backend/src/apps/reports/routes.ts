@@ -9,3 +9,4 @@ router.get('/food-cost', (req, res) => reportsController.getFoodCost(req, res));
 router.post('/export', (req, res) => reportsController.exportReport(req, res));
 
 export default router;
+

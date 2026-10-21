@@ -6,7 +6,9 @@ export type StaffRole =
   | 'server'
   | 'driver'
   | 'cleaner'
-  | 'accountant';
+  | 'accountant'
+  | 'bartender'
+  | 'host';
 
 export interface UserProfile {
   id: string;
@@ -42,6 +44,8 @@ export const DEFAULT_DEMO_PERSONAS: DemoPersona[] = [
   { id: 'usr_chef_01', name: 'Chef Vikram', email: 'vikram@rift.example', role: 'chef', pin: '4444', branch: 'Panaji Main', description: 'Executive Chef' },
   { id: 'usr_server_01', name: 'Ananya Roy', email: 'ananya@rift.example', role: 'server', pin: '5555', branch: 'Panaji Main', description: 'Lead Server' },
   { id: 'usr_driver_01', name: 'Karan Singh', email: 'karan@rift.example', role: 'driver', pin: '6666', branch: 'Panaji Main', description: 'Delivery Driver' },
-  { id: 'usr_acct_01', name: 'Neha Gupta', email: 'neha@rift.example', role: 'accountant', pin: '7777', branch: 'Panaji Main', description: 'Financial Accountant' },
   { id: 'usr_cleaner_01', name: 'Manoj Kumar', email: 'manoj@rift.example', role: 'cleaner', pin: '8888', branch: 'Panaji Main', description: 'Table Busser & Sanitizer' },
+  { id: 'usr_acct_01', name: 'Neha Gupta', email: 'neha@rift.example', role: 'accountant', pin: '7777', branch: 'Panaji Main', description: 'Financial Accountant' },
+  { id: 'usr_bar_01', name: 'Siddharth Rao', email: 'sid@rift.example', role: 'bartender', pin: '9999', branch: 'Panaji Main', description: 'Head Bartender & Mixologist' },
+  { id: 'usr_host_01', name: 'Kavita Sen', email: 'kavita@rift.example', role: 'host', pin: '1234', branch: 'Panaji Main', description: 'Front Desk Hostess & Concierge' },
 ];

@@ -387,3 +387,4 @@ export class LoyaltyService {
 }
 
 export const loyaltyService = new LoyaltyService();
+

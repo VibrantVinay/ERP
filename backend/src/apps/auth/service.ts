@@ -85,6 +85,24 @@ export const SEED_PERSONAS: DemoPersona[] = [
     branch: 'Panaji Main',
     description: 'Table bussing, table reset, hygiene & floor sanitation',
   },
+  {
+    id: 'usr_bar_09',
+    name: 'Siddharth Rao',
+    email: 'sid@rift.example',
+    role: 'bartender',
+    pin: '9999',
+    branch: 'Panaji Main',
+    description: 'Beverage & bar operations, craft cocktails, espresso service',
+  },
+  {
+    id: 'usr_host_10',
+    name: 'Kavita Sen',
+    email: 'kavita@rift.example',
+    role: 'host',
+    pin: '1234',
+    branch: 'Panaji Main',
+    description: 'Guest greetings, table allocation, reservations check-in',
+  },
 ];
 
 export class AuthService {

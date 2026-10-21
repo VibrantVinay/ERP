@@ -13,3 +13,4 @@ staffRouter.get('/payroll-summary', (req, res, next) => staffController.getPayro
 // Staff directory routes
 staffRouter.get('/', (req, res, next) => staffController.getStaff(req, res, next));
 staffRouter.post('/', (req, res, next) => staffController.createStaff(req, res, next));
+

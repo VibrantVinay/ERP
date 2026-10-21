@@ -11,3 +11,4 @@ export const loyaltyApp: PluggableApp = {
     await loyaltyService.initDatabaseSchema();
   },
 };
+

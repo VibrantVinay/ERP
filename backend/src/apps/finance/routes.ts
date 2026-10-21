@@ -10,3 +10,4 @@ router.get('/tax-summary', (req, res) => financeController.getTaxSummary(req, re
 router.post('/reconcile', (req, res) => financeController.reconcile(req, res));
 
 export default router;
+

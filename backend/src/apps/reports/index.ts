@@ -11,3 +11,4 @@ export const reportsApp: PluggableApp = {
     await reportsService.initDatabaseSchema();
   },
 };
+

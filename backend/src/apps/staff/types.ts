@@ -7,7 +7,8 @@ export type StaffRole =
   | 'owner'
   | 'cleaner'
   | 'accountant'
-  | 'bartender';
+  | 'bartender'
+  | 'host';
 
 export type EmploymentStatus = 'Active' | 'On Leave' | 'Terminated';
 export type ShiftStatus = 'Scheduled' | 'Completed' | 'Absent' | 'Swapped';
@@ -87,3 +88,4 @@ export interface PayrollSummary {
   estimatedGrossPayroll: number;
   period: string;
 }
+

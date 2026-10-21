@@ -6,7 +6,9 @@ export type StaffRole =
   | 'server'
   | 'driver'
   | 'cleaner'
-  | 'accountant';
+  | 'accountant'
+  | 'bartender'
+  | 'host';
 
 export interface UserProfile {
   id: string;

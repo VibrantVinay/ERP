@@ -10,3 +10,4 @@ router.get('/temperature-logs', (req, res) => tasksController.getTemperatureLogs
 router.post('/temperature-log', (req, res) => tasksController.logTemperature(req, res));
 
 export default router;
+

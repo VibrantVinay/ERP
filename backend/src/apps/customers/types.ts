@@ -53,3 +53,4 @@ export interface UpdateCustomerDto {
   tags?: string[];
   notes?: string;
 }
+

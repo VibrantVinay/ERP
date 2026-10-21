@@ -51,3 +51,4 @@ export const financeApi = {
     return res.data;
   },
 };
+

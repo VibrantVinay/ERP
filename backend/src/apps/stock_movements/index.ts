@@ -11,3 +11,4 @@ export const stockMovementsApp: PluggableApp = {
     await stockMovementService.initDatabaseSchema();
   },
 };
+

@@ -9,3 +9,4 @@ customerRouter.get('/', (req, res, next) => customerController.getCustomers(req,
 customerRouter.post('/', (req, res, next) => customerController.createCustomer(req, res, next));
 customerRouter.get('/:id', (req, res, next) => customerController.getCustomerById(req, res, next));
 customerRouter.put('/:id', (req, res, next) => customerController.updateCustomer(req, res, next));
+

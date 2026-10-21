@@ -514,3 +514,4 @@ export const CustomerWorkspace: React.FC = () => {
     </div>
   );
 };
+

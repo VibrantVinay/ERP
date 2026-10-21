@@ -11,3 +11,4 @@ export const equipmentApp: PluggableApp = {
     await equipmentService.initDatabaseSchema();
   },
 };
+

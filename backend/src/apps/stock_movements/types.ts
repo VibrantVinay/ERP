@@ -63,3 +63,4 @@ export interface VarianceSummary {
   wasteByReason: Record<string, { count: number; cost: number }>;
   recentMovementsCount: number;
 }
+

@@ -12,3 +12,4 @@ loyaltyRouter.post('/validate-coupon', (req, res, next) => loyaltyController.val
 loyaltyRouter.get('/members', (req, res, next) => loyaltyController.getMembers(req, res, next));
 loyaltyRouter.get('/members/:id', (req, res, next) => loyaltyController.getMemberById(req, res, next));
 loyaltyRouter.post('/members/:id/adjust-points', (req, res, next) => loyaltyController.adjustPoints(req, res, next));
+

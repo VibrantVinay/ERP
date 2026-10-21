@@ -513,3 +513,4 @@ export class EquipmentService {
 }
 
 export const equipmentService = new EquipmentService();
+

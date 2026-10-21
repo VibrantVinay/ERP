@@ -14,3 +14,4 @@ router.post('/breakdowns', (req, res) => equipmentController.createBreakdownTick
 router.patch('/breakdowns/:id/resolve', (req, res) => equipmentController.resolveTicket(req, res));
 
 export default router;
+

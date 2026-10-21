@@ -11,3 +11,4 @@ export const financeApp: PluggableApp = {
     await financeService.initDatabaseSchema();
   },
 };
+

@@ -11,3 +11,4 @@ export const suppliersApp: PluggableApp = {
     await supplierService.initDatabaseSchema();
   },
 };
+

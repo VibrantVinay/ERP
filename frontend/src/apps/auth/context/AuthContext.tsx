@@ -11,16 +11,17 @@ export function getLandingRouteForRole(role?: string): string {
       return '/kitchen';
     case 'cleaner':
       return '/tables';
+    case 'driver':
+      return '/delivery';
+    case 'accountant':
+      return '/finance';
+    case 'host':
+      return '/reservations';
+    case 'bartender':
     case 'server':
     case 'cashier':
-      return '/pos';
     case 'manager':
     case 'owner':
-      return '/pos';
-    case 'driver':
-      return '/orders';
-    case 'accountant':
-      return '/orders';
     default:
       return '/pos';
   }

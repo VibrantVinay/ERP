@@ -56,3 +56,4 @@ export const equipmentApi = {
     return res.data;
   },
 };
+

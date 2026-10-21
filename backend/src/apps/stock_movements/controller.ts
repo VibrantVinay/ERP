@@ -42,3 +42,4 @@ export class StockMovementController {
 }
 
 export const stockMovementController = new StockMovementController();
+

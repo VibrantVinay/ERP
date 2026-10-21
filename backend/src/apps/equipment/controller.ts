@@ -130,3 +130,4 @@ export class EquipmentController {
 }
 
 export const equipmentController = new EquipmentController();
+

@@ -65,6 +65,8 @@ export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
   cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff'],
   driver: ['/delivery', '/orders', '/staff'],
   accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff', '/equipment', '/finance', '/reports'],
+  bartender: ['/pos', '/kitchen', '/menu', '/inventory', '/stock-movements', '/staff', '/tasks', '/equipment'],
+  host: ['/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
   manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports'],
   owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports'],
 };
@@ -120,6 +122,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       case 'cleaner': return { bg: '#ccfbf1', text: '#0f766e' };
       case 'driver': return { bg: '#ffedd5', text: '#c2410c' };
       case 'accountant': return { bg: '#ecfdf5', text: '#047857' };
+      case 'bartender': return { bg: '#fef3c7', text: '#b45309' };
+      case 'host': return { bg: '#fdf2f8', text: '#be185d' };
       default: return { bg: '#e5e7eb', text: '#374151' };
     }
   };
@@ -220,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area with Unauthorized Route Guard */}
-        <div className="page-container" style={{ paddingBottom: '3.5rem' }}>
+        <div className="page-container" style={{ paddingBottom: '4.5rem' }}>
           {isAuthorized ? (
             children
           ) : (

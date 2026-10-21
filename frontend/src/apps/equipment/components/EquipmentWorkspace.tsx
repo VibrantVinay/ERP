@@ -861,3 +861,4 @@ export function EquipmentWorkspace() {
     </div>
   );
 }
+

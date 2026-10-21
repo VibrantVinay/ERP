@@ -255,10 +255,6 @@ Supported 7 core roles:
   * `PATCH  /api/v1/suppliers/orders/:id/status` (Approve, Order, Receive)
 
 ---
-# DONE TILL THIS
-
----
-
 ### App 12: `stock_movements` (Waste, Transfers & Adjustments)
 * **Entities**: `StockMovement`, `MovementType` (Waste, Transfer, Adjustment, CountVariance)
 * **Features**:
@@ -269,6 +265,9 @@ Supported 7 core roles:
   * `GET    /api/v1/stock-movements`
   * `POST   /api/v1/stock-movements`
   * `GET    /api/v1/stock-movements/variance-summary`
+
+---
+# DONE TILL THIS
 
 ---
 

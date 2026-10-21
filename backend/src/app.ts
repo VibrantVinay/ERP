@@ -25,6 +25,7 @@ import { staffApp } from './apps/staff';
 import { tasksApp } from './apps/tasks';
 import { equipmentApp } from './apps/equipment';
 import { financeApp } from './apps/finance';
+import { reportsApp } from './apps/reports';
 
 export const INSTALLED_APPS = [
   authApp,
@@ -46,6 +47,7 @@ export const INSTALLED_APPS = [
   tasksApp,
   equipmentApp,
   financeApp,
+  reportsApp,
 ];
 
 export async function createApp(): Promise<Express> {

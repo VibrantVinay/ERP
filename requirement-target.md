@@ -355,13 +355,6 @@ Supported 7 core roles:
   * `GET    /api/v1/finance/summary`
   * `POST   /api/v1/finance/reconcile`
 
----
-# DONE TILL THIS
-
----
-
----
-
 ### App 20: `reports` (Analytics & Intelligence)
 * **Entities**: `ReportDefinition`, `GeneratedReport`
 * **Features**:
@@ -374,6 +367,11 @@ Supported 7 core roles:
   * `GET    /api/v1/reports/menu-mix`
   * `GET    /api/v1/reports/food-cost`
   * `POST   /api/v1/reports/export`
+
+---
+# DONE TILL THIS
+
+---
 
 ---
 

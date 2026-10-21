@@ -281,10 +281,6 @@ Supported 7 core roles:
   * `GET    /api/v1/customers/:id/history`
 
 ---
-# DONE TILL THIS
-
----
-
 ### App 14: `loyalty` (Promotions & Loyalty Rewards)
 * **Entities**: `LoyaltyTier`, `LoyaltyAccount`, `PromoCampaign`, `CouponRedemption`
 * **Features**:
@@ -296,6 +292,9 @@ Supported 7 core roles:
   * `POST   /api/v1/loyalty/campaigns`
   * `POST   /api/v1/loyalty/validate-coupon`
   * `GET    /api/v1/loyalty/members/:id`
+
+---
+# DONE TILL THIS
 
 ---
 

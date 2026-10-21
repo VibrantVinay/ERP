@@ -12,8 +12,8 @@ export const LoyaltyWorkspace: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Live Coupon Validator State
-  const [testCouponCode, setTestCouponCode] = useState('');
-  const [testOrderAmount, setTestOrderAmount] = useState(1200);
+  const [testCouponCode, setTestCouponCode] = useState('WEEKEND20');
+  const [testOrderAmount, setTestOrderAmount] = useState('1200');
   const [validationResult, setValidationResult] = useState<ValidateCouponResult | null>(null);
   const [validating, setValidating] = useState(false);
 
@@ -21,7 +21,7 @@ export const LoyaltyWorkspace: React.FC = () => {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<LoyaltyMember | null>(null);
-  const [pointsDelta, setPointsDelta] = useState(100);
+  const [pointsDelta, setPointsDelta] = useState('100');
   const [pointsReason, setPointsReason] = useState('Hospitality goodwill bonus');
 
   // New Campaign Form
@@ -39,6 +39,7 @@ export const LoyaltyWorkspace: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [campData, memData] = await Promise.all([
         loyaltyApi.getCampaigns(),
         loyaltyApi.getMembers(),
@@ -59,11 +60,11 @@ export const LoyaltyWorkspace: React.FC = () => {
   const handleValidateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testCouponCode.trim()) return;
+    setValidating(true);
     try {
-      setValidating(true);
       const res = await loyaltyApi.validateCoupon({
-        code: testCouponCode,
-        orderTotal: testOrderAmount,
+        code: testCouponCode.trim(),
+        orderTotal: parseFloat(testOrderAmount) || 0,
       });
       setValidationResult(res);
     } catch (err: any) {
@@ -75,8 +76,15 @@ export const LoyaltyWorkspace: React.FC = () => {
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newCampaign.code.trim() || !newCampaign.title.trim()) {
+      alert('Code and title are required');
+      return;
+    }
     try {
-      const created = await loyaltyApi.createCampaign(newCampaign);
+      const created = await loyaltyApi.createCampaign({
+        ...newCampaign,
+        code: newCampaign.code.toUpperCase().trim(),
+      });
       setCampaigns(prev => [created, ...prev]);
       setShowCampaignModal(false);
       setNewCampaign({
@@ -90,405 +98,482 @@ export const LoyaltyWorkspace: React.FC = () => {
         validTo: '2026-12-31',
       });
     } catch (err: any) {
-      alert('Failed to launch campaign: ' + err.message);
+      alert('Failed to create campaign: ' + err.message);
     }
   };
 
-  const handleAdjustPoints = async (e: React.FormEvent) => {
+  const handleAwardPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMember) return;
+    const delta = parseInt(pointsDelta, 10);
+    if (isNaN(delta) || delta === 0) return;
     try {
       const updated = await loyaltyApi.adjustPoints(selectedMember.id, {
-        points: pointsDelta,
-        type: pointsDelta > 0 ? 'Bonus' : 'Redeemed',
-        description: pointsReason,
+        points: delta,
+        type: 'Adjustment',
+        description: pointsReason || 'Goodwill balance adjustment',
       });
-      setMembers(prev => prev.map(m => m.id === updated.id ? updated : m));
-      setSelectedMember(updated);
+      setMembers(prev => prev.map(m => (m.id === updated.id ? updated : m)));
       setShowPointsModal(false);
     } catch (err: any) {
       alert('Failed to adjust points: ' + err.message);
     }
   };
 
-  const getTierColor = (tier: TierName) => {
+  const getTierStyle = (tier: TierName) => {
     switch (tier) {
       case 'Platinum':
-        return 'bg-purple-500/10 text-purple-300 border-purple-500/30';
+        return { bg: '#e0e7ff', text: '#3730a3', border: '#818cf8' };
       case 'Gold':
-        return 'bg-amber-500/10 text-amber-300 border-amber-500/30';
+        return { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' };
       case 'Silver':
-        return 'bg-zinc-700/30 text-zinc-300 border-zinc-600/50';
+        return { bg: '#f1ede4', text: '#475569', border: '#cbd5e1' };
     }
   };
 
+  // Metrics
+  const activeCount = campaigns.filter(c => c.isActive).length;
+  const totalRedemptions = campaigns.reduce((sum, c) => sum + (c.usedCount || 0), 0);
+  const totalMembers = members.length;
+  const platinumMembers = members.filter(m => m.tier === 'Platinum').length;
+
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              🎁
-            </span>
-            Promotions & Loyalty Rewards
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'var(--primary)' }}>
+            🎁 Promotions & Loyalty Rewards
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Dynamic coupon code campaigns, spend threshold validations & member loyalty rewards tiers
+          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Dynamic promotional campaigns, automated coupon redemption rules, and tier rewards.
           </p>
         </div>
 
         <button
           onClick={() => setShowCampaignModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-orange-950/40 flex items-center gap-2 self-start sm:self-auto"
+          style={{
+            padding: '0.6rem 1.25rem',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            borderRadius: 'var(--radius-sm, 6px)',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}
         >
           <span>🏷️</span> New Promo Campaign
         </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Active Campaigns</p>
-          <p className="text-2xl font-bold text-white mt-1">{campaigns.filter(c => c.isActive).length}</p>
-          <p className="text-xs text-emerald-400 mt-1">Live coupon rules active</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Active Promo Campaigns
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#16a34a', marginTop: '0.25rem' }}>
+            {activeCount}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Live coupon discounts active</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Loyalty Club Members</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">{members.length}</p>
-          <p className="text-xs text-zinc-500 mt-1">Earning rewards per ₹100</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Total Redemptions
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0284c7', marginTop: '0.25rem' }}>
+            {totalRedemptions}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Guest coupon applications</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Coupons Redeemed</p>
-          <p className="text-2xl font-bold text-purple-400 mt-1">
-            {campaigns.reduce((sum, c) => sum + c.usedCount, 0)}
-          </p>
-          <p className="text-xs text-zinc-500 mt-1">Tracked promotional redemptions</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Loyalty Club Members
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>
+            {totalMembers}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{platinumMembers} Platinum VIPs</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Points Pool Outstanding</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">
-            {members.reduce((sum, m) => sum + m.currentPoints, 0).toLocaleString()} pts
-          </p>
-          <p className="text-xs text-zinc-500 mt-1">Active customer wallet balances</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Point Earning Multiplier
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>
+            1.5x - 2.5x
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Tier-accelerated rewards</div>
         </div>
       </div>
 
-      {/* Live Coupon Simulator & POS Validator Widget */}
-      <div className="p-5 rounded-2xl bg-zinc-900/70 border border-zinc-800 shadow-xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <span>⚡</span> POS Live Coupon Validator & Cart Discount Calculator
-          </h3>
-          <span className="text-[11px] text-zinc-500">Test promo code eligibility against cart subtotal</span>
+      {/* Live Coupon Simulator Bar */}
+      <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '0.5rem', letterSpacing: '0.5px' }}>
+          ⚡ Cashier / Live Coupon Engine Test Bench
         </div>
-
-        <form onSubmit={handleValidateCoupon} className="flex flex-col sm:flex-row items-center gap-3">
+        <form onSubmit={handleValidateCoupon} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="text"
-            required
-            placeholder="Enter Coupon Code (e.g. WELCOME20, FLAT250, VIPROYAL)"
+            placeholder="Coupon Code (e.g. WEEKEND20)"
             value={testCouponCode}
             onChange={e => setTestCouponCode(e.target.value.toUpperCase())}
-            className="w-full sm:w-80 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 uppercase font-mono tracking-wider focus:outline-none focus:border-orange-500"
+            style={{ padding: '0.5rem 0.85rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', fontWeight: 700, width: '180px' }}
           />
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs text-zinc-400 font-medium">Cart ₹:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Order Bill: $</span>
             <input
               type="number"
-              required
-              min="0"
+              placeholder="1200"
               value={testOrderAmount}
-              onChange={e => setTestOrderAmount(Number(e.target.value))}
-              className="w-28 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-orange-500"
+              onChange={e => setTestOrderAmount(e.target.value)}
+              style={{ padding: '0.5rem 0.85rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', width: '110px' }}
             />
           </div>
           <button
             type="submit"
             disabled={validating}
-            className="w-full sm:w-auto px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl text-xs font-semibold transition-all"
+            style={{
+              padding: '0.5rem 1.1rem',
+              background: '#0284c7',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
-            {validating ? 'Verifying...' : 'Validate Code'}
+            {validating ? 'Testing...' : 'Validate Coupon'}
           </button>
-        </form>
 
-        {validationResult && (
-          <div
-            className={`p-3 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${
-              validationResult.isValid
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-            }`}
-          >
-            <div className="flex items-center gap-2 font-medium">
-              <span>{validationResult.isValid ? '✓' : '✕'}</span>
-              <span>{validationResult.message}</span>
+          {validationResult && (
+            <div
+              style={{
+                marginLeft: 'auto',
+                padding: '0.45rem 1rem',
+                borderRadius: '6px',
+                background: validationResult.isValid ? '#dcfce7' : '#fee2e2',
+                border: `1px solid ${validationResult.isValid ? '#86efac' : '#fca5a5'}`,
+                color: validationResult.isValid ? '#166534' : '#991b1b',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+              }}
+            >
+              {validationResult.isValid
+                ? `✓ VALID: Discount Applied -₹${(validationResult.calculatedDiscount || 0).toFixed(2)} (Final: ₹${(validationResult.finalTotal || 0).toFixed(2)})`
+                : `✕ REJECTED: ${validationResult.message}`}
             </div>
-
-            {validationResult.isValid && (
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <span className="text-zinc-400">Discount: -₹{validationResult.calculatedDiscount}</span>
-                <span className="text-white text-sm">Final Bill: ₹{validationResult.finalTotal}</span>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </form>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)' }}>
         <button
           onClick={() => setActiveTab('campaigns')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'campaigns'
-              ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-          }`}
+          style={{
+            padding: '0.75rem 1.25rem',
+            border: 'none',
+            background: 'none',
+            borderBottom: activeTab === 'campaigns' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'campaigns' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'campaigns' ? 700 : 500,
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+          }}
         >
           🏷️ Promotional Campaigns ({campaigns.length})
         </button>
         <button
           onClick={() => setActiveTab('members')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'members'
-              ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-          }`}
+          style={{
+            padding: '0.75rem 1.25rem',
+            border: 'none',
+            background: 'none',
+            borderBottom: activeTab === 'members' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'members' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'members' ? 700 : 500,
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+          }}
         >
-          👑 VIP Loyalty Members ({members.length})
+          👑 Loyalty Club Members ({members.length})
         </button>
       </div>
 
-      {/* Main Workspace Body */}
-      {loading ? (
-        <div className="p-12 text-center text-zinc-500 animate-pulse">Loading promotions & loyalty...</div>
-      ) : activeTab === 'campaigns' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {campaigns.map(camp => (
-            <div key={camp.id} className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 transition-all space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-white text-base">{camp.title}</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {camp.discountType === 'Percentage'
-                      ? `${camp.discountValue}% Off (Max ₹${camp.maxDiscount || 'Unlimited'})`
-                      : `Flat ₹${camp.discountValue} Off`}
-                  </p>
-                </div>
-                <span className="px-2.5 py-1 bg-orange-500/10 border border-orange-500/30 text-orange-400 font-mono font-bold text-xs rounded-xl">
-                  {camp.code}
-                </span>
-              </div>
-
-              <div className="bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/80 space-y-1 text-xs">
-                <div className="flex justify-between text-zinc-400">
-                  <span>Min Spend Required</span>
-                  <span className="font-semibold text-zinc-200">₹{camp.minSpend}</span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Redemptions Used</span>
-                  <span className="font-semibold text-zinc-200">{camp.usedCount} / {camp.usageLimit}</span>
-                </div>
-                <div className="flex justify-between text-zinc-400">
-                  <span>Valid Period</span>
-                  <span className="text-[11px] text-zinc-300">{camp.validFrom} → {camp.validTo}</span>
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-between text-xs">
-                <span className="text-emerald-400 font-medium">
-                  {camp.isActive ? '● Active Campaign' : '○ Paused'}
-                </span>
-                <button
-                  onClick={() => {
-                    setTestCouponCode(camp.code);
-                    window.scrollTo({ top: 120, behavior: 'smooth' });
-                  }}
-                  className="text-orange-400 hover:text-orange-300 font-medium"
-                >
-                  Test in POS →
-                </button>
-              </div>
+      {/* Tab 1: Campaigns */}
+      {activeTab === 'campaigns' && (
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          {loading ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading promo campaigns...</div>
+          ) : campaigns.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No promotional campaigns found.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface-alt, #f1ede4)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '0.75rem 1rem' }}>Coupon Code</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Campaign Title</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Discount Structure</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Min Spend</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Redemptions</th>
+                    <th style={{ padding: '0.75rem 1rem' }}>Valid Until</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaigns.map(c => {
+                    const usagePct = c.usageLimit > 0 ? Math.round((c.usedCount / c.usageLimit) * 100) : 0;
+                    return (
+                      <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span
+                            style={{
+                              fontFamily: 'monospace',
+                              fontWeight: 800,
+                              fontSize: '0.95rem',
+                              padding: '0.25rem 0.55rem',
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              borderRadius: '4px',
+                              border: '1px dashed #d97706',
+                              letterSpacing: '0.05em',
+                            }}
+                          >
+                            {c.code}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{c.title}</td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span style={{ fontWeight: 700, color: '#16a34a' }}>
+                            {c.discountType === 'Percentage' ? `${c.discountValue}% OFF` : `$${c.discountValue} FLAT`}
+                          </span>
+                          {c.maxDiscount ? <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}> (Max ${c.maxDiscount})</span> : null}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600 }}>
+                          ${c.minSpend.toFixed(2)}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{c.usedCount} / {c.usageLimit}</div>
+                          <div style={{ width: '80px', height: '5px', background: '#e2e8f0', borderRadius: '3px', margin: '3px auto 0', overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.min(100, usagePct)}%`, height: '100%', background: '#0284c7' }} />
+                          </div>
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{c.validTo}</td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: c.isActive ? '#dcfce7' : '#fee2e2',
+                              color: c.isActive ? '#15803d' : '#b91c1c',
+                            }}
+                          >
+                            {c.isActive ? 'Active' : 'Expired'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
-      ) : (
-        /* Loyalty Members Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {members.map(m => (
-            <div key={m.id} className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 transition-all space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-white text-base">{m.customerName}</h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">📞 {m.phone}</p>
-                </div>
-                <span className={`px-2.5 py-1 rounded-xl text-xs border font-semibold ${getTierColor(m.tier)}`}>
-                  {m.tier}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Available Points</p>
-                  <p className="text-lg font-bold text-amber-400 mt-0.5">{m.currentPoints} pts</p>
-                </div>
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Lifetime Earned</p>
-                  <p className="text-lg font-bold text-zinc-300 mt-0.5">{m.lifetimePoints} pts</p>
-                </div>
-              </div>
-
-              {/* Recent Points History */}
-              <div>
-                <p className="text-[11px] font-semibold uppercase text-zinc-400 mb-1.5">Points Audit Trail</p>
-                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                  {m.transactions.map((t, idx) => (
-                    <div key={idx} className="p-2 bg-zinc-950/40 rounded-lg border border-zinc-800/60 text-xs flex items-center justify-between">
-                      <span className="text-zinc-300 truncate max-w-[180px]">{t.description}</span>
-                      <span className={`font-mono font-bold ${t.points > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {t.points > 0 ? `+${t.points}` : t.points} pts
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-zinc-800/80">
-                <button
-                  onClick={() => {
-                    setSelectedMember(m);
-                    setShowPointsModal(true);
-                  }}
-                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl text-xs font-semibold transition-all"
-                >
-                  Adjust / Award Points
-                </button>
-              </div>
-            </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* New Campaign Modal */}
-      {showCampaignModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>🏷️</span> Launch Promotional Campaign
-              </h3>
-              <button onClick={() => setShowCampaignModal(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
+      {/* Tab 2: Members */}
+      {activeTab === 'members' && (
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-alt, #f1ede4)', borderBottom: '1px solid var(--border)' }}>
+                  <th style={{ padding: '0.75rem 1rem' }}>Member Name</th>
+                  <th style={{ padding: '0.75rem 1rem' }}>Phone</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Rewards Tier</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Points Balance</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Lifetime Points</th>
+                  <th style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map(m => {
+                  const badge = getTierStyle(m.tier);
+                  return (
+                    <tr key={m.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>{m.customerName}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>{m.phone}</td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                        <span
+                          style={{
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: badge.bg,
+                            color: badge.text,
+                            border: `1px solid ${badge.border}`,
+                          }}
+                        >
+                          ★ {m.tier}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: '#d97706' }}>
+                        {m.currentPoints.toLocaleString()} pts
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
+                        {m.lifetimePoints.toLocaleString()} pts
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                        <button
+                          onClick={() => {
+                            setSelectedMember(m);
+                            setShowPointsModal(true);
+                          }}
+                          style={{
+                            padding: '0.3rem 0.65rem',
+                            background: 'var(--surface-alt, #f1ede4)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + Goodwill Points
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-            <form onSubmit={handleCreateCampaign} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+      {/* Modal: New Campaign */}
+      {showCampaignModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'var(--surface, #fff)', width: '100%', maxWidth: '500px', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.25rem', fontWeight: 700 }}>Create Promotional Campaign</h3>
+            <form onSubmit={handleCreateCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Coupon Code</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Coupon Code *</label>
                   <input
+                    type="text"
                     required
-                    placeholder="e.g. MONSOON25"
+                    placeholder="e.g. FESTIVE25"
                     value={newCampaign.code}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 font-mono uppercase"
+                    onChange={e => setNewCampaign({ ...newCampaign, code: e.target.value.toUpperCase() })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', fontWeight: 700 }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Discount Type</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Campaign Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 25% Off Weekend Dinners"
+                    value={newCampaign.title}
+                    onChange={e => setNewCampaign({ ...newCampaign, title: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Discount Type</label>
                   <select
                     value={newCampaign.discountType}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, discountType: e.target.value as DiscountType }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    onChange={e => setNewCampaign({ ...newCampaign, discountType: e.target.value as DiscountType })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   >
                     <option value="Percentage">Percentage (%)</option>
-                    <option value="FixedAmount">Flat Amount (₹)</option>
+                    <option value="Fixed">Fixed Amount ($)</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Campaign Title</label>
-                <input
-                  required
-                  placeholder="e.g. Monsoon Special 25% Off Food Bill"
-                  value={newCampaign.title}
-                  onChange={e => setNewCampaign(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">
-                    {newCampaign.discountType === 'Percentage' ? 'Discount (%)' : 'Discount (₹)'}
-                  </label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Discount Value</label>
                   <input
                     type="number"
                     required
-                    min="1"
                     value={newCampaign.discountValue}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, discountValue: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Min Spend (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={newCampaign.minSpend}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, minSpend: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Max Cap (₹)</label>
-                  <input
-                    type="number"
-                    placeholder="Optional"
-                    value={newCampaign.maxDiscount || ''}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, maxDiscount: e.target.value ? Number(e.target.value) : undefined }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    onChange={e => setNewCampaign({ ...newCampaign, discountValue: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Usage Limit</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Min Order Spend ($)</label>
                   <input
                     type="number"
-                    required
-                    value={newCampaign.usageLimit}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, usageLimit: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    value={newCampaign.minSpend}
+                    onChange={e => setNewCampaign({ ...newCampaign, minSpend: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Valid Until Date</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Max Discount Cap ($)</label>
+                  <input
+                    type="number"
+                    value={newCampaign.maxDiscount || ''}
+                    placeholder="Optional cap"
+                    onChange={e => setNewCampaign({ ...newCampaign, maxDiscount: parseFloat(e.target.value) || undefined })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Redemption Cap</label>
+                  <input
+                    type="number"
+                    value={newCampaign.usageLimit}
+                    onChange={e => setNewCampaign({ ...newCampaign, usageLimit: parseInt(e.target.value, 10) || 100 })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Expiry Date</label>
                   <input
                     type="date"
-                    required
                     value={newCampaign.validTo}
-                    onChange={e => setNewCampaign(prev => ({ ...prev, validTo: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    onChange={e => setNewCampaign({ ...newCampaign, validTo: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setShowCampaignModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{ padding: '0.5rem 1.25rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Publish Campaign
+                  Launch Campaign
                 </button>
               </div>
             </form>
@@ -496,58 +581,47 @@ export const LoyaltyWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* Adjust Points Modal */}
+      {/* Modal: Award Points */}
       {showPointsModal && selectedMember && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>👑</span> Adjust Member Points
-              </h3>
-              <button onClick={() => setShowPointsModal(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
-
-            <p className="text-xs text-zinc-400">
-              Member: <span className="text-white font-semibold">{selectedMember.customerName}</span> (Current balance: {selectedMember.currentPoints} pts)
-            </p>
-
-            <form onSubmit={handleAdjustPoints} className="space-y-3">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'var(--surface, #fff)', width: '100%', maxWidth: '440px', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.2rem', fontWeight: 700 }}>
+              Award Goodwill Points: {selectedMember.customerName}
+            </h3>
+            <form onSubmit={handleAwardPoints} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">
-                  Points Adjustment (Positive to Add, Negative to Deduct)
-                </label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Points Delta (Add/Deduct)</label>
                 <input
                   type="number"
                   required
                   value={pointsDelta}
-                  onChange={e => setPointsDelta(Number(e.target.value))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 font-mono"
+                  onChange={e => setPointsDelta(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', fontWeight: 700, fontSize: '1.1rem' }}
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Reason / Description</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Reason / Authorization Note</label>
                 <input
+                  type="text"
                   required
                   value={pointsReason}
                   onChange={e => setPointsReason(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setShowPointsModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{ padding: '0.5rem 1.25rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Save Points
+                  Confirm Points
                 </button>
               </div>
             </form>
@@ -557,4 +631,3 @@ export const LoyaltyWorkspace: React.FC = () => {
     </div>
   );
 };
-

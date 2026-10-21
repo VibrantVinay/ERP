@@ -15,7 +15,6 @@ export const CustomerWorkspace: React.FC = () => {
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   // Form State
   const [newCustomer, setNewCustomer] = useState<CreateCustomerDto>({
@@ -36,8 +35,9 @@ export const CustomerWorkspace: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await customerApi.getCustomers({
-        segment: selectedSegment,
+        segment: selectedSegment !== 'all' ? selectedSegment : undefined,
         search: searchQuery || undefined,
       });
       setCustomers(data || []);
@@ -67,6 +67,10 @@ export const CustomerWorkspace: React.FC = () => {
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newCustomer.name || !newCustomer.phone) {
+      alert('Name and phone number are required');
+      return;
+    }
     try {
       const created = await customerApi.createCustomer(newCustomer);
       setCustomers(prev => [created, ...prev]);
@@ -95,416 +99,520 @@ export const CustomerWorkspace: React.FC = () => {
         marketingOptIn: !selectedCustomer.marketingOptIn,
       });
       setSelectedCustomer(updated);
-      setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setCustomers(prev => prev.map(c => (c.id === updated.id ? updated : c)));
     } catch (err: any) {
       alert('Failed to update marketing consent: ' + err.message);
     }
   };
 
-  const getSegmentBadge = (segment: CustomerSegment) => {
+  const getSegmentStyle = (segment: CustomerSegment) => {
     switch (segment) {
       case 'VIP':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        return { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' };
       case 'Regular':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        return { bg: '#dcfce7', text: '#15803d', border: '#86efac' };
       case 'Corporate':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        return { bg: '#e0f2fe', text: '#0369a1', border: '#7dd3fc' };
       case 'Occasional':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+        return { bg: '#f3e8ff', text: '#6b21a8', border: '#d8b4fe' };
       case 'New':
-        return 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+        return { bg: '#ffedd5', text: '#c2410c', border: '#fdba74' };
       default:
-        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        return { bg: '#f1ede4', text: '#4b5563', border: '#d1d5db' };
     }
   };
 
   // KPIs
   const vipCount = customers.filter(c => c.segment === 'VIP').length;
   const corporateCount = customers.filter(c => c.segment === 'Corporate').length;
-  const totalLTV = customers.reduce((sum, c) => sum + c.totalSpend, 0);
-  const avgVisits = customers.length ? Math.round((customers.reduce((sum, c) => sum + c.totalVisits, 0) / customers.length) * 10) / 10 : 0;
+  const totalLTV = customers.reduce((sum, c) => sum + (c.totalSpend || 0), 0);
+  const avgVisits = customers.length
+    ? Math.round((customers.reduce((sum, c) => sum + (c.totalVisits || 0), 0) / customers.length) * 10) / 10
+    : 0;
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              👥
-            </span>
-            Guest CRM & Customer Profiles
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'var(--primary)' }}>
+            👥 Guest CRM & Customer Profiles
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Guest hospitality preferences, dining history, lifetime value & dietary constraints
+          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Guest hospitality preferences, dining visit ledger, lifetime value, and dietary restrictions.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-orange-950/40 flex items-center gap-2 self-start sm:self-auto"
+          style={{
+            padding: '0.6rem 1.25rem',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            borderRadius: 'var(--radius-sm, 6px)',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}
         >
           <span>+</span> New Guest Profile
         </button>
       </div>
 
       {/* KPI Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Registered Guests</p>
-          <p className="text-2xl font-bold text-white mt-1">{customers.length}</p>
-          <p className="text-xs text-indigo-400 mt-1">Avg {avgVisits} visits / guest</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Total Registered Guests
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.25rem' }}>
+            {customers.length}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Avg {avgVisits} visits / guest</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">VIP Guests</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">{vipCount}</p>
-          <p className="text-xs text-zinc-500 mt-1">Priority table seating</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            VIP Members
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>
+            {vipCount}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Priority seating & executive care</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Corporate Accounts</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{corporateCount}</p>
-          <p className="text-xs text-zinc-500 mt-1">Executive & PDR dining</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Corporate Accounts
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0284c7', marginTop: '0.25rem' }}>
+            {corporateCount}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>PDR dining & company billing</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tracked Lifetime Spend</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">₹{totalLTV.toLocaleString('en-IN')}</p>
-          <p className="text-xs text-zinc-500 mt-1">Repeat restaurant loyalty</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Tracked Lifetime Spend
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#16a34a', marginTop: '0.25rem' }}>
+            ${totalLTV.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Direct dining hospitality revenue</div>
         </div>
       </div>
 
-      {/* Search & Segment Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(['all', 'VIP', 'Regular', 'Corporate', 'Occasional', 'New'] as const).map(seg => (
-            <button
-              key={seg}
-              onClick={() => setSelectedSegment(seg)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                selectedSegment === seg
-                  ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-              }`}
-            >
-              {seg === 'all' ? 'All Segments' : seg}
-            </button>
-          ))}
+      {/* Filter and Search Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '0.85rem 1.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {(['all', 'VIP', 'Regular', 'Corporate', 'Occasional', 'New'] as const).map(seg => {
+            const isSel = selectedSegment === seg;
+            return (
+              <button
+                key={seg}
+                onClick={() => setSelectedSegment(seg)}
+                style={{
+                  padding: '0.4rem 0.85rem',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  border: isSel ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  background: isSel ? 'var(--primary)' : 'var(--surface-alt, #f1ede4)',
+                  color: isSel ? '#ffffff' : 'var(--text)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {seg === 'all' ? 'All Segments' : seg}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <input
             type="text"
             placeholder="Search by name, phone or email..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && fetchData()}
-            className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-orange-500 w-64"
+            style={{
+              padding: '0.45rem 0.85rem',
+              borderRadius: 'var(--radius-sm, 6px)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg, #f7f5f0)',
+              fontSize: '0.85rem',
+              width: '260px',
+            }}
           />
           <button
             onClick={fetchData}
-            className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-xl font-medium"
+            style={{
+              padding: '0.45rem 0.85rem',
+              background: 'var(--surface-alt, #f1ede4)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
             Search
           </button>
         </div>
       </div>
 
-      {/* Main CRM Workspace Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Customer List */}
-        <div className="lg:col-span-7 space-y-3">
+      {/* Main 2-Column Master-Detail Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 1.2fr) minmax(380px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        {/* Left Column: Customer Directory Table */}
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Guest Directory</h3>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{customers.length} profiles listed</span>
+          </div>
+
           {loading ? (
-            <div className="p-12 text-center text-zinc-500 animate-pulse">Loading guest profiles...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading guest profiles...</div>
           ) : customers.length === 0 ? (
-            <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-              No customer records found.
-            </div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No guests found matching criteria.</div>
           ) : (
-            customers.map(c => (
-              <div
-                key={c.id}
-                onClick={() => handleSelectCustomer(c)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                  selectedCustomer?.id === c.id
-                    ? 'bg-zinc-800/90 border-orange-500/50 shadow-lg'
-                    : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-850 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 text-white font-bold text-sm flex items-center justify-center">
-                      {c.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-white text-sm">{c.name}</h4>
-                        <span className={`px-2 py-0.2 rounded-full text-[10px] border font-medium ${getSegmentBadge(c.segment)}`}>
-                          {c.segment}
-                        </span>
-                      </div>
-                      <p className="text-xs text-zinc-400 mt-0.5">📞 {c.phone} {c.email ? `· ✉️ ${c.email}` : ''}</p>
-                    </div>
-                  </div>
+            <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface-alt, #f1ede4)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '0.75rem 1rem' }}>Guest</th>
+                    <th style={{ padding: '0.75rem 0.75rem' }}>Segment</th>
+                    <th style={{ padding: '0.75rem 0.75rem', textAlign: 'right' }}>Visits</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Total Spend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customers.map(cust => {
+                    const isSelected = selectedCustomer?.id === cust.id;
+                    const badge = getSegmentStyle(cust.segment);
 
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-emerald-400">₹{c.totalSpend.toLocaleString('en-IN')}</p>
-                    <p className="text-[11px] text-zinc-500">{c.totalVisits} visits</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400">
-                  <div className="flex flex-wrap gap-1.5">
-                    {c.dietaryConstraints.map((d, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-md text-[10px]">
-                        🥗 {d}
-                      </span>
-                    ))}
-                    {c.preferredTable && (
-                      <span className="px-2 py-0.5 bg-zinc-800 text-zinc-300 rounded-md text-[10px]">
-                        🪑 Prefers {c.preferredTable}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-zinc-500">
-                    {c.marketingOptIn ? '✓ Marketing Opt-in' : '✕ Opt-out'}
-                  </span>
-                </div>
-              </div>
-            ))
+                    return (
+                      <tr
+                        key={cust.id}
+                        onClick={() => handleSelectCustomer(cust)}
+                        style={{
+                          borderBottom: '1px solid var(--border)',
+                          background: isSelected ? 'var(--accent-light, #eaf0e2)' : 'transparent',
+                          cursor: 'pointer',
+                          transition: 'background 0.15s ease',
+                        }}
+                      >
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{cust.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{cust.phone}</div>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.75rem' }}>
+                          <span
+                            style={{
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              background: badge.bg,
+                              color: badge.text,
+                              border: `1px solid ${badge.border}`,
+                            }}
+                          >
+                            {cust.segment}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>
+                          {cust.totalVisits}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
+                          ${(cust.totalSpend || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
-        {/* Selected Customer Profile Inspector */}
-        <div className="lg:col-span-5">
-          {selectedCustomer ? (
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 space-y-5 sticky top-6 shadow-xl">
-              {/* Profile Card Header */}
-              <div className="flex items-start justify-between pb-4 border-b border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white font-bold text-lg flex items-center justify-center shadow-lg">
-                    {selectedCustomer.name.charAt(0)}
+        {/* Right Column: Selected Guest Profile & Dining History */}
+        {selectedCustomer ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Guest Profile Card */}
+            <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      {selectedCustomer.name}
+                    </h2>
+                    <span
+                      style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        ...getSegmentStyle(selectedCustomer.segment),
+                      }}
+                    >
+                      {selectedCustomer.segment}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{selectedCustomer.name}</h3>
-                    <p className="text-xs text-zinc-400">📞 {selectedCustomer.phone}</p>
-                    {selectedCustomer.email && (
-                      <p className="text-xs text-zinc-500">✉️ {selectedCustomer.email}</p>
-                    )}
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+                    📞 {selectedCustomer.phone} • ✉️ {selectedCustomer.email || 'No email on record'}
                   </div>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs border font-medium ${getSegmentBadge(selectedCustomer.segment)}`}>
-                  {selectedCustomer.segment}
-                </span>
-              </div>
 
-              {/* Guest Metrics Grid */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Total Spend</p>
-                  <p className="text-sm font-bold text-emerald-400 mt-0.5">₹{selectedCustomer.totalSpend.toLocaleString('en-IN')}</p>
-                </div>
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Visits</p>
-                  <p className="text-sm font-bold text-white mt-0.5">{selectedCustomer.totalVisits}</p>
-                </div>
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Avg / Visit</p>
-                  <p className="text-sm font-bold text-zinc-300 mt-0.5">₹{selectedCustomer.averageSpend.toLocaleString('en-IN')}</p>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lifetime Value</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a' }}>
+                    ${(selectedCustomer.totalSpend || 0).toFixed(2)}
+                  </div>
                 </div>
               </div>
 
-              {/* Preferences & Dietary Section */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold uppercase text-zinc-400">Dining Preferences & Constraints</h4>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2.5 bg-zinc-950/40 rounded-xl border border-zinc-800/80">
-                    <span className="text-zinc-400">Dietary Constraints:</span>
-                    <span className="font-medium text-rose-400">
-                      {selectedCustomer.dietaryConstraints.length > 0
-                        ? selectedCustomer.dietaryConstraints.join(', ')
-                        : 'None declared'}
-                    </span>
+              {/* Hospitality Preferences Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ background: 'var(--surface-alt, #f1ede4)', padding: '0.85rem', borderRadius: 'var(--radius-sm, 6px)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Preferred Table / Seating
                   </div>
-                  <div className="flex items-center justify-between p-2.5 bg-zinc-950/40 rounded-xl border border-zinc-800/80">
-                    <span className="text-zinc-400">Table Preference:</span>
-                    <span className="font-medium text-zinc-200">
-                      {selectedCustomer.preferredTable || 'No specific seating'}
-                    </span>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '0.2rem' }}>
+                    📍 {selectedCustomer.preferredTable || 'Table 01 (Main Dining)'}
                   </div>
-                  <div className="flex items-center justify-between p-2.5 bg-zinc-950/40 rounded-xl border border-zinc-800/80">
-                    <span className="text-zinc-400">Marketing Consent:</span>
+                </div>
+
+                <div style={{ background: 'var(--surface-alt, #f1ede4)', padding: '0.85rem', borderRadius: 'var(--radius-sm, 6px)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Marketing Communication
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: selectedCustomer.marketingOptIn ? '#16a34a' : '#9ca3af' }}>
+                      {selectedCustomer.marketingOptIn ? '✓ Subscribed (SMS/Email)' : '✕ Opted Out'}
+                    </span>
                     <button
                       onClick={handleToggleMarketing}
-                      className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all ${
-                        selectedCustomer.marketingOptIn
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                      }`}
+                      style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none' }}
                     >
-                      {selectedCustomer.marketingOptIn ? 'Opted In ✓' : 'Opted Out ✕'}
+                      Toggle
                     </button>
                   </div>
                 </div>
+              </div>
 
-                {selectedCustomer.notes && (
-                  <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl text-xs text-amber-200/90">
-                    <span className="font-semibold text-amber-400">VIP Host Notes: </span>
-                    {selectedCustomer.notes}
+              {/* Dietary Constraints */}
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  ⚠️ Dietary Constraints & Allergens
+                </div>
+                {selectedCustomer.dietaryConstraints && selectedCustomer.dietaryConstraints.length > 0 ? (
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {selectedCustomer.dietaryConstraints.map((d, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          padding: '0.2rem 0.6rem',
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {d}
+                      </span>
+                    ))}
                   </div>
+                ) : (
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    No dietary restrictions reported.
+                  </span>
                 )}
               </div>
 
-              {/* Recent Orders History */}
-              <div>
-                <h4 className="text-xs font-semibold uppercase text-zinc-400 mb-2">Recent Dining Visits</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {history.map((h, i) => (
-                    <div key={i} className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl text-xs flex items-center justify-between">
+              {/* Tags */}
+              {selectedCustomer.tags && selectedCustomer.tags.length > 0 && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                    Guest Tags
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {selectedCustomer.tags.map((t, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          padding: '0.2rem 0.6rem',
+                          background: 'var(--accent-light, #eaf0e2)',
+                          color: 'var(--accent, #556b2f)',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        🏷️ {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hospitality Notes */}
+              {selectedCustomer.notes && (
+                <div style={{ padding: '0.75rem', background: '#fefce8', border: '1px solid #fef08a', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.85rem', color: '#854d0e' }}>
+                  <strong>Server Notes:</strong> "{selectedCustomer.notes}"
+                </div>
+              )}
+            </div>
+
+            {/* Dining Visit History Ledger */}
+            <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.25rem', boxShadow: 'var(--shadow-sm)' }}>
+              <h3 style={{ margin: '0 0 0.85rem', fontSize: '1.05rem', fontWeight: 700 }}>
+                Dining & Visit History ({history.length})
+              </h3>
+              {history.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>No past dining orders recorded.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '250px', overflowY: 'auto' }}>
+                  {history.map((h, idx) => (
+                    <div
+                      key={h.orderTicket || idx}
+                      style={{
+                        padding: '0.65rem 0.85rem',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm, 6px)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.85rem',
+                      }}
+                    >
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-white">{h.orderTicket}</span>
-                          <span className="text-zinc-500">· {h.orderType}</span>
+                        <div style={{ fontWeight: 600 }}>{h.orderDate} • {h.orderTicket}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {h.orderType} • {h.itemsSummary} ({h.paymentMethod})
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">{h.itemsSummary}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-emerald-400">₹{h.totalAmount.toLocaleString('en-IN')}</p>
-                        <p className="text-[10px] text-zinc-500">{h.paymentMethod}</p>
+                      <div style={{ fontWeight: 700, color: '#16a34a' }}>
+                        ₹{h.totalAmount?.toLocaleString('en-IN') || 0}
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-              Select a guest profile to view details.
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Select a guest profile to view details.
+          </div>
+        )}
       </div>
 
-      {/* New Guest Profile Modal */}
+      {/* Modal: New Guest Profile */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>👤</span> Register New Guest Profile
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateCustomer} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Guest Full Name</label>
-                <input
-                  required
-                  placeholder="e.g. Vikram Singhal"
-                  value={newCustomer.name}
-                  onChange={e => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'var(--surface, #fff)', width: '100%', maxWidth: '520px', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.25rem', fontWeight: 700 }}>Register New Guest Profile</h3>
+            <form onSubmit={handleCreateCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Mobile Phone</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Full Name *</label>
                   <input
+                    type="text"
                     required
-                    placeholder="98200 12345"
-                    value={newCustomer.phone}
-                    onChange={e => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    placeholder="e.g. Rahul Kapoor"
+                    value={newCustomer.name}
+                    onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Email (Optional)</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Phone Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. +91 98201 99881"
+                    value={newCustomer.phone}
+                    onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Email Address</label>
                   <input
                     type="email"
                     placeholder="guest@example.com"
                     value={newCustomer.email}
-                    onChange={e => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Customer Segment</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Segment</label>
                   <select
                     value={newCustomer.segment}
-                    onChange={e => setNewCustomer(prev => ({ ...prev, segment: e.target.value as CustomerSegment }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    onChange={e => setNewCustomer({ ...newCustomer, segment: e.target.value as CustomerSegment })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                   >
-                    <option value="New">New Guest</option>
+                    <option value="New">New</option>
                     <option value="Regular">Regular</option>
                     <option value="VIP">VIP</option>
                     <option value="Corporate">Corporate</option>
                     <option value="Occasional">Occasional</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Preferred Seating</label>
-                  <input
-                    placeholder="e.g. Patio 02, Counter, Table 04"
-                    value={newCustomer.preferredTable}
-                    onChange={e => setNewCustomer(prev => ({ ...prev, preferredTable: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Dietary Constraints (Comma separated)</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Dietary Constraints & Allergies (Comma separated)</label>
                 <input
-                  placeholder="e.g. Vegetarian, Gluten-Free, Nut Allergy"
+                  type="text"
+                  placeholder="e.g. Nut Allergy, Gluten-Free, Vegan"
                   value={dietaryInput}
                   onChange={e => {
                     setDietaryInput(e.target.value);
-                    const list = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-                    setNewCustomer(prev => ({ ...prev, dietaryConstraints: list }));
+                    setNewCustomer({
+                      ...newCustomer,
+                      dietaryConstraints: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+                    });
                   }}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">VIP Host / Service Notes</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Hospitality / Service Notes</label>
                 <textarea
-                  placeholder="e.g. Prefers sparkling San Pellegrino on arrival. Celebrating birthday in November."
+                  rows={2}
+                  placeholder="e.g. Anniversary dinner coming up, prefers window booth seating"
                   value={newCustomer.notes}
-                  onChange={e => setNewCustomer(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 resize-none h-18"
+                  onChange={e => setNewCustomer({ ...newCustomer, notes: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="optin"
-                  checked={newCustomer.marketingOptIn}
-                  onChange={e => setNewCustomer(prev => ({ ...prev, marketingOptIn: e.target.checked }))}
-                  className="rounded text-orange-500 focus:ring-orange-500"
-                />
-                <label htmlFor="optin" className="text-xs text-zinc-300">
-                  Guest has consented to SMS / Email dining notifications (Opt-in)
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{ padding: '0.5rem 1.25rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Save Profile
+                  Create Guest Profile
                 </button>
               </div>
             </form>
@@ -514,4 +622,3 @@ export const CustomerWorkspace: React.FC = () => {
     </div>
   );
 };
-

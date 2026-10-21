@@ -19,7 +19,7 @@ export const FeedbackWorkspace: React.FC = () => {
 
   // Resolution State
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [compensationOffered, setCompensationOffered] = useState('20% Discount Voucher on next visit');
+  const [compensationOffered, setCompensationOffered] = useState('20% Goodwill Voucher on next dining visit');
 
   // New Feedback Form State
   const [newFeedback, setNewFeedback] = useState<CreateFeedbackDto>({
@@ -39,8 +39,12 @@ export const FeedbackWorkspace: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [listData, summaryData] = await Promise.all([
-        feedbackApi.getFeedback({ status: selectedStatus, sentiment: selectedSentiment }),
+        feedbackApi.getFeedback({
+          status: selectedStatus !== 'all' ? selectedStatus : undefined,
+          sentiment: selectedSentiment !== 'all' ? selectedSentiment : undefined,
+        }),
         feedbackApi.getSummaryMetrics(),
       ]);
       setFeedbacks(listData || []);
@@ -59,29 +63,12 @@ export const FeedbackWorkspace: React.FC = () => {
     fetchData();
   }, [selectedStatus, selectedSentiment]);
 
-  const handleResolveFeedback = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFeedback) return;
-    try {
-      const updated = await feedbackApi.resolveFeedback(selectedFeedback.id, {
-        resolutionNotes,
-        compensationOffered,
-        resolvedBy: 'Mina D’Souza (Manager)',
-      });
-      setFeedbacks(prev => prev.map(f => f.id === updated.id ? updated : f));
-      setSelectedFeedback(updated);
-      setShowResolveModal(false);
-      setResolutionNotes('');
-      // Refresh metrics
-      const sum = await feedbackApi.getSummaryMetrics();
-      setMetrics(sum);
-    } catch (err: any) {
-      alert('Failed to resolve feedback: ' + err.message);
-    }
-  };
-
   const handleCreateFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newFeedback.customerName.trim()) {
+      alert('Guest name is required');
+      return;
+    }
     try {
       const created = await feedbackApi.createFeedback(newFeedback);
       setFeedbacks(prev => [created, ...prev]);
@@ -91,7 +78,7 @@ export const FeedbackWorkspace: React.FC = () => {
         ticketNumber: `GH-${Math.floor(1000 + Math.random() * 9000)}`,
         customerName: '',
         phone: '',
-        tableOrChannel: 'Table 04',
+        tableOrChannel: 'Table 02',
         overallRating: 5,
         foodRating: 5,
         serviceRating: 5,
@@ -100,313 +87,489 @@ export const FeedbackWorkspace: React.FC = () => {
         dishMentions: [],
       });
       setDishesInput('');
-      const sum = await feedbackApi.getSummaryMetrics();
-      setMetrics(sum);
+      const updatedMetrics = await feedbackApi.getSummaryMetrics();
+      setMetrics(updatedMetrics);
     } catch (err: any) {
-      alert('Failed to record feedback: ' + err.message);
+      alert('Failed to submit feedback: ' + err.message);
     }
   };
 
-  const getStatusBadge = (status: FeedbackStatus) => {
-    switch (status) {
-      case 'Escalated':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-      case 'Under Review':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'Resolved':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'New':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      default:
-        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+  const handleResolveFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFeedback) return;
+    try {
+      const updated = await feedbackApi.resolveFeedback(selectedFeedback.id, {
+        resolutionNotes,
+        compensationOffered: compensationOffered.trim() || undefined,
+        resolvedBy: 'Duty Manager',
+      });
+      setSelectedFeedback(updated);
+      setFeedbacks(prev => prev.map(f => (f.id === updated.id ? updated : f)));
+      setShowResolveModal(false);
+      setResolutionNotes('');
+    } catch (err: any) {
+      alert('Failed to resolve ticket: ' + err.message);
+    }
+  };
+
+  const getSentimentStyle = (sentiment: FeedbackSentiment) => {
+    switch (sentiment) {
+      case 'Positive':
+        return { bg: '#dcfce7', text: '#15803d', border: '#86efac' };
+      case 'Neutral':
+        return { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' };
+      case 'Negative':
+        return { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' };
     }
   };
 
   const renderStars = (rating: number) => {
-    return '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+    const full = Math.min(5, Math.max(0, Math.round(rating)));
+    return '★'.repeat(full) + '☆'.repeat(5 - full);
   };
 
+  const escalatedCount = feedbacks.filter(f => f.status === 'Escalated').length;
+
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              💬
-            </span>
-            Guest Ratings, Reviews & Care
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'var(--primary)' }}>
+            💬 Guest Ratings, Reviews & Care
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Real-time table sentiment, multi-attribute star ratings & automatic manager escalation for poor ratings
+          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Real-time table sentiment, multi-attribute star ratings, and automatic manager escalation for poor ratings.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-orange-950/40 flex items-center gap-2 self-start sm:self-auto"
+          style={{
+            padding: '0.6rem 1.25rem',
+            background: 'var(--primary)',
+            color: '#ffffff',
+            borderRadius: 'var(--radius-sm, 6px)',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-sm)',
+          }}
         >
           <span>✍️</span> Collect Guest Review
         </button>
       </div>
 
-      {/* KPI Scorecards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Overall Satisfaction</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-2xl font-bold text-amber-400">★ {metrics?.averageOverall || 5.0}</span>
-            <span className="text-xs text-zinc-500">/ 5.0</span>
+      {/* KPI Overview Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Overall Satisfaction
           </div>
-          <p className="text-xs text-emerald-400 mt-1">{metrics?.positivePercentage || 100}% positive sentiment</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Culinary Rating</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-2xl font-bold text-white">★ {metrics?.averageFood || 5.0}</span>
-            <span className="text-xs text-zinc-500">food quality</span>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>
+            ★ {metrics?.averageOverall?.toFixed(1) || '4.8'} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/ 5.0</span>
           </div>
-          <p className="text-xs text-zinc-400 mt-1">Service: ★ {metrics?.averageService || 5.0}</p>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{metrics?.totalReviews || feedbacks.length} verified reviews</div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Escalated Complaints</p>
-          <p className="text-2xl font-bold text-rose-400 mt-1">{metrics?.escalatedCount || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Auto-flagged (&lt;3 stars)</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Multi-Attribute Breakdown
+          </div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)', marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <div>Food: <strong style={{ color: '#16a34a' }}>★ {metrics?.averageFood?.toFixed(1) || '4.9'}</strong></div>
+            <div>Service: <strong style={{ color: '#0284c7' }}>★ {metrics?.averageService?.toFixed(1) || '4.7'}</strong></div>
+            <div>Ambiance: <strong style={{ color: '#8b5cf6' }}>★ {metrics?.averageAmbiance?.toFixed(1) || '4.8'}</strong></div>
+          </div>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Reviews</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{metrics?.totalReviews || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Dine-in, bar & delivery</p>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Escalated (&lt;3 Stars)
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: escalatedCount > 0 ? '#dc2626' : '#16a34a', marginTop: '0.25rem' }}>
+            {escalatedCount} {escalatedCount > 0 ? 'Urgent' : 'Cleared'}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Manager recovery tickets</div>
+        </div>
+
+        <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.2rem', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Positive Sentiment Ratio
+          </div>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#16a34a', marginTop: '0.25rem' }}>
+            {metrics?.positivePercentage || 92}%
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Guest promoter index</div>
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(['all', 'Escalated', 'Under Review', 'New', 'Resolved'] as const).map(st => (
-            <button
-              key={st}
-              onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                selectedStatus === st
-                  ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-              }`}
-            >
-              {st === 'all' ? 'All Statuses' : st}
-            </button>
-          ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '0.85rem 1.25rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Status:</span>
+          {(['all', 'Pending', 'Escalated', 'Resolved'] as const).map(st => {
+            const isSel = selectedStatus === st;
+            return (
+              <button
+                key={st}
+                onClick={() => setSelectedStatus(st)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  border: isSel ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  background: isSel ? 'var(--primary)' : 'var(--surface-alt, #f1ede4)',
+                  color: isSel ? '#ffffff' : 'var(--text)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {st === 'all' ? 'All Reviews' : st}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500 font-medium">Sentiment:</span>
-          <select
-            value={selectedSentiment}
-            onChange={e => setSelectedSentiment(e.target.value)}
-            className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-orange-500"
-          >
-            <option value="all">All Sentiments</option>
-            <option value="Positive">Positive (4-5★)</option>
-            <option value="Neutral">Neutral (3★)</option>
-            <option value="Negative">Negative (&lt;3★)</option>
-          </select>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Sentiment:</span>
+          {(['all', 'Positive', 'Neutral', 'Negative'] as const).map(sn => {
+            const isSel = selectedSentiment === sn;
+            return (
+              <button
+                key={sn}
+                onClick={() => setSelectedSentiment(sn)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  border: isSel ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  background: isSel ? 'var(--primary)' : 'var(--surface-alt, #f1ede4)',
+                  color: isSel ? '#ffffff' : 'var(--text)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {sn === 'all' ? 'All' : sn}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Workspace Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Feedback Review Cards */}
-        <div className="lg:col-span-7 space-y-3">
+      {/* Main 2-Column Feed & Detail Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 1.2fr) minmax(380px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+        {/* Left Column: Feedback Cards List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {loading ? (
-            <div className="p-12 text-center text-zinc-500 animate-pulse">Loading guest reviews...</div>
+            <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--surface, #fff)', borderRadius: 'var(--radius-md, 10px)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              Loading guest feedback...
+            </div>
           ) : feedbacks.length === 0 ? (
-            <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-              No feedback reviews matching this filter.
+            <div style={{ padding: '3rem', textAlign: 'center', background: 'var(--surface, #fff)', borderRadius: 'var(--radius-md, 10px)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              No feedback reviews matching filter criteria.
             </div>
           ) : (
-            feedbacks.map(f => (
-              <div
-                key={f.id}
-                onClick={() => setSelectedFeedback(f)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                  selectedFeedback?.id === f.id
-                    ? 'bg-zinc-800/90 border-orange-500/50 shadow-lg'
-                    : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-850 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-white text-sm">{f.customerName}</h4>
-                      <span className="font-mono text-zinc-500 text-xs">({f.ticketNumber} · {f.tableOrChannel})</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] border font-medium ${getStatusBadge(f.status)}`}>
-                        {f.status}
-                      </span>
+            feedbacks.map(f => {
+              const isSelected = selectedFeedback?.id === f.id;
+              const sentiment = getSentimentStyle(f.sentiment);
+
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => setSelectedFeedback(f)}
+                  style={{
+                    background: 'var(--surface, #fff)',
+                    border: `1px solid ${f.status === 'Escalated' ? '#f87171' : isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-md, 10px)',
+                    padding: '1.1rem 1.25rem',
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-sm)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>{f.customerName}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>• {f.tableOrChannel}</span>
+                        {f.status === 'Escalated' && (
+                          <span style={{ padding: '0.15rem 0.5rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>
+                            ⚠️ ESCALATED
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ color: '#d97706', fontSize: '1rem', letterSpacing: '1px', marginTop: '0.2rem' }}>
+                        {renderStars(f.overallRating)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({f.overallRating}/5)</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-amber-400 font-bold text-xs">{renderStars(f.overallRating)}</span>
-                      <span className="text-[11px] text-zinc-500">{f.overallRating}/5.0</span>
-                    </div>
-                  </div>
 
-                  <span className="text-[11px] text-zinc-500 whitespace-nowrap">
-                    {new Date(f.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
-                    {new Date(f.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-
-                <p className="text-xs text-zinc-300 mt-2.5 leading-relaxed bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/50">
-                  "{f.comments}"
-                </p>
-
-                <div className="mt-3 pt-3 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex flex-wrap gap-1.5">
-                    {f.dishMentions.map((dish, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded-md text-[10px]">
-                        🍽️ {dish}
-                      </span>
-                    ))}
-                  </div>
-
-                  {f.status === 'Resolved' && (
-                    <span className="text-emerald-400 font-medium text-[11px]">
-                      ✓ Resolved: {f.compensationOffered || 'Followed up'}
+                    <span
+                      style={{
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: sentiment.bg,
+                        color: sentiment.text,
+                        border: `1px solid ${sentiment.border}`,
+                      }}
+                    >
+                      {f.sentiment}
                     </span>
-                  )}
+                  </div>
+
+                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    "{f.comments}"
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <span>{f.createdAt ? f.createdAt.slice(0, 10) : 'Recent'}</span>
+                    <span style={{ fontWeight: 600, color: f.status === 'Resolved' ? '#16a34a' : 'inherit' }}>
+                      Status: {f.status}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Selected Review Inspector & Care Resolution Panel */}
-        <div className="lg:col-span-5">
-          {selectedFeedback ? (
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 space-y-5 sticky top-6 shadow-xl">
-              <div className="flex items-start justify-between pb-3 border-b border-zinc-800">
+        {/* Right Column: Detailed Review & Care Inspector */}
+        {selectedFeedback ? (
+          <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <h3 className="text-lg font-bold text-white">{selectedFeedback.customerName}</h3>
-                  <p className="text-xs text-zinc-400">{selectedFeedback.tableOrChannel} · Ticket {selectedFeedback.ticketNumber}</p>
+                  <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 700, color: 'var(--primary)' }}>
+                    {selectedFeedback.customerName}
+                  </h2>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    {selectedFeedback.tableOrChannel} • Ticket #{selectedFeedback.ticketNumber}
+                  </div>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs border font-medium ${getStatusBadge(selectedFeedback.status)}`}>
-                  {selectedFeedback.status}
+
+                <span
+                  style={{
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    ...getSentimentStyle(selectedFeedback.sentiment),
+                  }}
+                >
+                  {selectedFeedback.sentiment}
+                </span>
+              </div>
+            </div>
+
+            {/* Scorecard Bars */}
+            <div style={{ background: 'var(--surface-alt, #f1ede4)', padding: '1rem', borderRadius: 'var(--radius-sm, 6px)', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Overall Star Score</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>
+                  {renderStars(selectedFeedback.overallRating)} ({selectedFeedback.overallRating}/5)
                 </span>
               </div>
 
-              {/* Star Ratings Breakdown */}
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Food</p>
-                  <p className="text-sm font-bold text-amber-400 mt-0.5">★ {selectedFeedback.foodRating}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', textAlign: 'center', borderTop: '1px solid var(--border)', paddingTop: '0.75rem', fontSize: '0.85rem' }}>
+                <div>
+                  <div style={{ color: 'var(--text-muted)' }}>Food Quality</div>
+                  <div style={{ fontWeight: 700, color: '#16a34a' }}>★ {selectedFeedback.foodRating}/5</div>
                 </div>
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Service</p>
-                  <p className="text-sm font-bold text-amber-400 mt-0.5">★ {selectedFeedback.serviceRating}</p>
+                <div>
+                  <div style={{ color: 'var(--text-muted)' }}>Staff Service</div>
+                  <div style={{ fontWeight: 700, color: '#0284c7' }}>★ {selectedFeedback.serviceRating}/5</div>
                 </div>
-                <div className="bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800">
-                  <p className="text-[10px] text-zinc-500 uppercase font-semibold">Ambiance</p>
-                  <p className="text-sm font-bold text-amber-400 mt-0.5">★ {selectedFeedback.ambianceRating}</p>
-                </div>
-              </div>
-
-              {/* Full Review Comment */}
-              <div>
-                <p className="text-xs font-semibold uppercase text-zinc-400 mb-1.5">Guest Feedback Details</p>
-                <div className="p-3.5 bg-zinc-950/60 rounded-xl border border-zinc-800 text-xs text-zinc-200 leading-relaxed">
-                  "{selectedFeedback.comments}"
+                <div>
+                  <div style={{ color: 'var(--text-muted)' }}>Ambiance</div>
+                  <div style={{ fontWeight: 700, color: '#8b5cf6' }}>★ {selectedFeedback.ambianceRating}/5</div>
                 </div>
               </div>
-
-              {/* Resolution Status & Recovery */}
-              {selectedFeedback.status === 'Resolved' ? (
-                <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs space-y-1.5 text-emerald-300">
-                  <p className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                    <span>✓</span> Case Resolved & Closed
-                  </p>
-                  <p className="text-zinc-300"><span className="text-zinc-500">Handled By:</span> {selectedFeedback.assignedTo}</p>
-                  {selectedFeedback.compensationOffered && (
-                    <p className="text-zinc-300"><span className="text-zinc-500">Compensation:</span> {selectedFeedback.compensationOffered}</p>
-                  )}
-                  {selectedFeedback.resolutionNotes && (
-                    <p className="text-zinc-300"><span className="text-zinc-500">Notes:</span> {selectedFeedback.resolutionNotes}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3 pt-2 border-t border-zinc-800">
-                  <p className="text-xs font-semibold text-zinc-400">Customer Care & Resolution:</p>
-                  {selectedFeedback.status === 'Escalated' && (
-                    <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
-                      ⚠️ <span className="font-semibold">Manager Escalation:</span> Rating is below 3 stars. Immediate guest outreach recommended.
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => setShowResolveModal(true)}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-xs transition-all shadow-md flex items-center justify-center gap-2"
-                  >
-                    <span>🤝</span> Resolve & Offer Recovery Care
-                  </button>
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-              Select a review to inspect details.
+
+            {/* Comment Section */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                Guest Comment & Observations
+              </div>
+              <div style={{ padding: '0.85rem', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.9rem', fontStyle: 'italic', lineHeight: 1.5 }}>
+                "{selectedFeedback.comments}"
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Dish Mentions */}
+            {selectedFeedback.dishMentions && selectedFeedback.dishMentions.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Referenced Menu Dishes
+                </div>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {selectedFeedback.dishMentions.map((d, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        padding: '0.2rem 0.6rem',
+                        background: '#e0e7ff',
+                        color: '#3730a3',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      🍽️ {d}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Resolution History / Actions */}
+            {selectedFeedback.status === 'Resolved' ? (
+              <div style={{ padding: '0.85rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: 'var(--radius-sm, 6px)', fontSize: '0.85rem', color: '#166534' }}>
+                <div style={{ fontWeight: 700 }}>✓ Resolved by Management</div>
+                {selectedFeedback.resolutionNotes && <div style={{ marginTop: '0.25rem' }}>Note: "{selectedFeedback.resolutionNotes}"</div>}
+                {selectedFeedback.compensationOffered && (
+                  <div style={{ marginTop: '0.25rem', fontWeight: 600 }}>Goodwill: {selectedFeedback.compensationOffered}</div>
+                )}
+              </div>
+            ) : (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setShowResolveModal(true)}
+                  style={{
+                    flex: 1,
+                    padding: '0.65rem 1rem',
+                    background: '#16a34a',
+                    color: '#fff',
+                    borderRadius: 'var(--radius-sm, 6px)',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✓ Take Care & Resolve Ticket
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md, 10px)', padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+            Select a feedback review from the feed to inspect and resolve.
+          </div>
+        )}
       </div>
 
-      {/* Resolve Feedback Modal */}
-      {showResolveModal && selectedFeedback && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>🤝</span> Guest Care Resolution
-              </h3>
-              <button onClick={() => setShowResolveModal(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
+      {/* Modal: Add Feedback */}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'var(--surface, #fff)', width: '100%', maxWidth: '520px', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.25rem', fontWeight: 700 }}>Collect Guest Review & Rating</h3>
+            <form onSubmit={handleCreateFeedback} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Guest Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Maya Deshmukh"
+                    value={newFeedback.customerName}
+                    onChange={e => setNewFeedback({ ...newFeedback, customerName: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Table / Channel</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Table 04 or Takeaway"
+                    value={newFeedback.tableOrChannel}
+                    onChange={e => setNewFeedback({ ...newFeedback, tableOrChannel: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                  />
+                </div>
+              </div>
 
-            <p className="text-xs text-zinc-400">
-              Customer: <span className="text-white font-semibold">{selectedFeedback.customerName}</span> ({selectedFeedback.tableOrChannel})
-            </p>
-
-            <form onSubmit={handleResolveFeedback} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Customer Compensation / Goodwill Offer</label>
-                <input
-                  required
-                  value={compensationOffered}
-                  onChange={e => setCompensationOffered(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                />
+              {/* Star Ratings Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'var(--surface-alt, #f1ede4)', padding: '0.75rem', borderRadius: '6px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Overall Star Rating (1-5)</label>
+                  <select
+                    value={newFeedback.overallRating}
+                    onChange={e => setNewFeedback({ ...newFeedback, overallRating: parseInt(e.target.value, 10) })}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)' }}
+                  >
+                    <option value={5}>★★★★★ (5 - Excellent)</option>
+                    <option value={4}>★★★★☆ (4 - Good)</option>
+                    <option value={3}>★★★☆☆ (3 - Average)</option>
+                    <option value={2}>★★☆☆☆ (2 - Poor - Auto Escalate)</option>
+                    <option value={1}>★☆☆☆☆ (1 - Very Bad - Auto Escalate)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Food Rating (1-5)</label>
+                  <select
+                    value={newFeedback.foodRating}
+                    onChange={e => setNewFeedback({ ...newFeedback, foodRating: parseInt(e.target.value, 10) })}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)' }}
+                  >
+                    <option value={5}>5 Stars</option>
+                    <option value={4}>4 Stars</option>
+                    <option value={3}>3 Stars</option>
+                    <option value={2}>2 Stars</option>
+                    <option value={1}>1 Star</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Manager Resolution Notes</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Guest Comments</label>
                 <textarea
+                  rows={2}
                   required
-                  placeholder="Details of manager outreach, table apology, kitchen briefing..."
-                  value={resolutionNotes}
-                  onChange={e => setResolutionNotes(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 resize-none h-20"
+                  placeholder="Review comments, flavor notes, staff mentions..."
+                  value={newFeedback.comments}
+                  onChange={e => setNewFeedback({ ...newFeedback, comments: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Dish Mentions (Comma separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Risotto, Truffle Fries, Tiramisu"
+                  value={dishesInput}
+                  onChange={e => {
+                    setDishesInput(e.target.value);
+                    setNewFeedback({
+                      ...newFeedback,
+                      dishMentions: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+                    });
+                  }}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => setShowResolveModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  onClick={() => setShowAddModal(false)}
+                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{ padding: '0.5rem 1.25rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Confirm & Mark Resolved
+                  Save Review
                 </button>
               </div>
             </form>
@@ -414,135 +577,49 @@ export const FeedbackWorkspace: React.FC = () => {
         </div>
       )}
 
-      {/* Collect Feedback Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>✍️</span> Record Guest Review
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-zinc-400 hover:text-white">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateFeedback} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Guest Name</label>
-                  <input
-                    required
-                    placeholder="Guest name"
-                    value={newFeedback.customerName}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, customerName: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Table / Channel</label>
-                  <input
-                    required
-                    placeholder="Table 04 / Bar / Online"
-                    value={newFeedback.tableOrChannel}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, tableOrChannel: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
-                  />
-                </div>
-              </div>
-
-              {/* 4 Ratings */}
-              <div className="grid grid-cols-4 gap-2">
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Overall (1-5)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.5"
-                    required
-                    value={newFeedback.overallRating}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, overallRating: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 text-center font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Food (1-5)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.5"
-                    required
-                    value={newFeedback.foodRating}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, foodRating: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 text-center font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Service (1-5)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.5"
-                    required
-                    value={newFeedback.serviceRating}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, serviceRating: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 text-center font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Ambiance</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    step="0.5"
-                    required
-                    value={newFeedback.ambianceRating}
-                    onChange={e => setNewFeedback(prev => ({ ...prev, ambianceRating: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 text-center font-bold"
-                  />
-                </div>
-              </div>
-
+      {/* Modal: Resolve & Customer Recovery */}
+      {showResolveModal && selectedFeedback && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: 'var(--surface, #fff)', width: '100%', maxWidth: '480px', borderRadius: 'var(--radius-md, 10px)', padding: '1.5rem', boxShadow: 'var(--shadow-md)' }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.25rem', fontWeight: 700 }}>
+              Resolve Guest Ticket: #{selectedFeedback.ticketNumber}
+            </h3>
+            <form onSubmit={handleResolveFeedback} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Guest Comments & Review</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Management Resolution Action Notes *</label>
                 <textarea
+                  rows={3}
                   required
-                  placeholder="What did the customer share about their dining experience?"
-                  value={newFeedback.comments}
-                  onChange={e => setNewFeedback(prev => ({ ...prev, comments: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 resize-none h-20"
+                  placeholder="e.g. Reached out to guest via phone, apologized for delay, kitchen team debriefed."
+                  value={resolutionNotes}
+                  onChange={e => setResolutionNotes(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Dishes Mentioned (Comma separated)</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>Goodwill Compensation / Recovery Voucher</label>
                 <input
-                  placeholder="e.g. Wagyu Ribeye, Risotto, Tiramisu"
-                  value={dishesInput}
-                  onChange={e => {
-                    setDishesInput(e.target.value);
-                    const list = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-                    setNewFeedback(prev => ({ ...prev, dishMentions: list }));
-                  }}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  type="text"
+                  value={compensationOffered}
+                  onChange={e => setCompensationOffered(e.target.value)}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)' }}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  onClick={() => setShowResolveModal(false)}
+                  style={{ padding: '0.5rem 1rem', border: '1px solid var(--border)', background: 'transparent', borderRadius: '6px', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{ padding: '0.5rem 1.25rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Submit Review
+                  Complete Resolution
                 </button>
               </div>
             </form>
@@ -552,4 +629,3 @@ export const FeedbackWorkspace: React.FC = () => {
     </div>
   );
 };
-

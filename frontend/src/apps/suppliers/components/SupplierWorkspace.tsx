@@ -43,9 +43,10 @@ export const SupplierWorkspace: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [suppData, poData] = await Promise.all([
-        supplierApi.getSuppliers(selectedCategory),
-        supplierApi.getPurchaseOrders(selectedStatus),
+        supplierApi.getSuppliers(selectedCategory !== 'all' ? selectedCategory : undefined),
+        supplierApi.getPurchaseOrders(selectedStatus !== 'all' ? selectedStatus : undefined),
       ]);
       setSuppliers(suppData || []);
       setOrders(poData || []);
@@ -53,7 +54,7 @@ export const SupplierWorkspace: React.FC = () => {
         setSelectedPO(poData[0]);
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to load supplier records');
+      setError(err?.message || 'Failed to load procurement records');
     } finally {
       setLoading(false);
     }
@@ -84,17 +85,24 @@ export const SupplierWorkspace: React.FC = () => {
       alert('Please select a supplier');
       return;
     }
+    const validItems = newPOItems.filter(it => it.ingredientName.trim() !== '');
+    if (validItems.length === 0) {
+      alert('Please add at least one line item');
+      return;
+    }
     try {
       const created = await supplierApi.createPurchaseOrder({
         supplierId: newPOSupplierId,
         expectedDeliveryDate: newPOExpectedDate || new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0],
         notes: newPONotes,
-        items: newPOItems.filter(it => it.ingredientName.trim() !== ''),
+        items: validItems,
       });
       setOrders(prev => [created, ...prev]);
       setSelectedPO(created);
       setShowPOModal(false);
       setNewPOItems([{ ingredientName: '', quantityOrdered: 10, unit: 'kg', unitPrice: 100 }]);
+      setNewPONotes('');
+      setNewPOSupplierId('');
     } catch (err: any) {
       alert('Failed to create purchase order: ' + err.message);
     }
@@ -127,44 +135,98 @@ export const SupplierWorkspace: React.FC = () => {
   const receivedCount = orders.filter(o => o.status === 'Received').length;
   const totalSpend = orders.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? o.totalAmount : 0), 0);
 
-  const getStatusColor = (status: POStatus) => {
+  const getStatusStyle = (status: POStatus): { bg: string; color: string; border: string } => {
     switch (status) {
-      case 'Draft': return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'Approved': return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      case 'Ordered': return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      case 'Partially Received': return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
-      case 'Received': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'Cancelled': return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-      default: return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+      case 'Draft':
+        return { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.3)' };
+      case 'Approved':
+        return { bg: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' };
+      case 'Ordered':
+        return { bg: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
+      case 'Partially Received':
+        return { bg: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', border: 'rgba(99, 102, 241, 0.3)' };
+      case 'Received':
+        return { bg: 'rgba(16, 185, 129, 0.12)', color: '#34d399', border: 'rgba(16, 185, 129, 0.3)' };
+      case 'Cancelled':
+        return { bg: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: 'rgba(239, 68, 68, 0.3)' };
+      default:
+        return { bg: 'var(--surface-muted)', color: 'var(--text-muted)', border: 'var(--border)' };
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minHeight: '100%' }}>
+      {/* Top Header */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        paddingBottom: '0.5rem',
+      }}>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '42px',
+              height: '42px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(249, 115, 22, 0.12)',
+              color: '#f97316',
+              fontSize: '1.25rem',
+              border: '1px solid rgba(249, 115, 22, 0.25)',
+            }}>
               🏢
             </span>
-            Procurement & Supplier Management
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Supplier registry, automated purchase orders, delivery receiving & ingredient verification
-          </p>
+            <div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                Procurement & Supplier Management
+              </h1>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+                Automated supplier registry, purchase order pipelines, and dock receiving inspection
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={() => setShowSupplierModal(true)}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl font-medium text-sm transition-all shadow-sm flex items-center gap-2"
+            style={{
+              padding: '0.6rem 1.1rem',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
           >
             <span>+</span> Add Supplier
           </button>
           <button
             onClick={() => setShowPOModal(true)}
-            className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-orange-950/40 flex items-center gap-2"
+            style={{
+              padding: '0.6rem 1.2rem',
+              background: 'linear-gradient(135deg, #f97316, #ea580c)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)',
+            }}
           >
             <span>📄</span> New Purchase Order
           </button>
@@ -172,61 +234,144 @@ export const SupplierWorkspace: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Active Suppliers</p>
-          <p className="text-2xl font-bold text-white mt-1">{suppliers.length}</p>
-          <p className="text-xs text-emerald-400 mt-1">100% verified vendors</p>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '1rem',
+      }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Active Suppliers
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text)', margin: '0.35rem 0 0.15rem' }}>
+            {suppliers.length}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 500 }}>
+            ● 100% verified food-grade vendors
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Pending Approval</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">{pendingApprovalCount}</p>
-          <p className="text-xs text-zinc-400 mt-1">Requires manager sign-off</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Pending Approval
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f59e0b', margin: '0.35rem 0 0.15rem' }}>
+            {pendingApprovalCount}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Requires head chef / manager sign-off
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">In-Transit Orders</p>
-          <p className="text-2xl font-bold text-purple-400 mt-1">{inTransitCount}</p>
-          <p className="text-xs text-zinc-400 mt-1">Awaiting kitchen dock delivery</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            In-Transit Orders
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#c084fc', margin: '0.35rem 0 0.15rem' }}>
+            {inTransitCount}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Awaiting receiving dock verification
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total PO Volume</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">₹{totalSpend.toLocaleString('en-IN')}</p>
-          <p className="text-xs text-zinc-400 mt-1">{receivedCount} successfully fulfilled</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Total Spend Volume
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', margin: '0.35rem 0 0.15rem' }}>
+            ₹{totalSpend.toLocaleString('en-IN')}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {receivedCount} fulfilled POs
+          </span>
         </div>
       </div>
 
-      {/* Workspace Tabs & Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-3">
-        <div className="flex items-center gap-2">
+      {/* Tabs and Filtering Navigation */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: '0.75rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'orders'
-                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'orders' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'orders' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'orders' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
           >
             📋 Purchase Orders ({orders.length})
           </button>
           <button
             onClick={() => setActiveTab('directory')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === 'directory'
-                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeTab === 'directory' ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: activeTab === 'directory' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: activeTab === 'directory' ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
           >
             🏢 Supplier Directory ({suppliers.length})
           </button>
         </div>
 
         {activeTab === 'orders' ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500 font-medium">Status:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Status:</span>
             <select
               value={selectedStatus}
               onChange={e => setSelectedStatus(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-orange-500"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text)',
+                padding: '0.35rem 0.65rem',
+                fontSize: '0.8rem',
+                outline: 'none',
+              }}
             >
               <option value="all">All Statuses</option>
               <option value="Draft">Draft</option>
@@ -237,12 +382,20 @@ export const SupplierWorkspace: React.FC = () => {
             </select>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500 font-medium">Category:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>Category:</span>
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-orange-500"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text)',
+                padding: '0.35rem 0.65rem',
+                fontSize: '0.8rem',
+                outline: 'none',
+              }}
             >
               <option value="all">All Categories</option>
               <option value="Produce">Produce</option>
@@ -258,82 +411,203 @@ export const SupplierWorkspace: React.FC = () => {
 
       {/* Main Workspace Body */}
       {loading ? (
-        <div className="p-12 text-center text-zinc-500 animate-pulse">Loading procurement records...</div>
+        <div style={{
+          padding: '3rem',
+          textAlign: 'center',
+          color: 'var(--text-muted)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+        }}>
+          Loading procurement data...
+        </div>
       ) : activeTab === 'orders' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gap: '1.25rem',
+          alignItems: 'start',
+        }}>
           {/* PO List */}
-          <div className="lg:col-span-7 space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {orders.length === 0 ? (
-              <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
+              <div style={{
+                padding: '2.5rem',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)',
+              }}>
                 No purchase orders found matching this filter.
               </div>
             ) : (
-              orders.map(po => (
-                <div
-                  key={po.id}
-                  onClick={() => setSelectedPO(po)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    selectedPO?.id === po.id
-                      ? 'bg-zinc-800/90 border-orange-500/50 shadow-lg'
-                      : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-850 hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-white text-sm">{po.poNumber}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs border font-medium ${getStatusColor(po.status)}`}>
-                          {po.status}
-                        </span>
+              orders.map(po => {
+                const isSelected = selectedPO?.id === po.id;
+                const statusStyle = getStatusStyle(po.status);
+                return (
+                  <div
+                    key={po.id}
+                    onClick={() => setSelectedPO(po)}
+                    style={{
+                      padding: '1rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: isSelected ? '1px solid #f97316' : '1px solid var(--border)',
+                      background: isSelected ? 'rgba(249, 115, 22, 0.05)' : 'var(--surface)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.88rem', color: 'var(--text)' }}>
+                            {po.poNumber}
+                          </span>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '9999px',
+                            background: statusStyle.bg,
+                            color: statusStyle.color,
+                            border: `1px solid ${statusStyle.border}`,
+                          }}>
+                            {po.status}
+                          </span>
+                        </div>
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                          {po.supplierName}
+                        </p>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1 font-medium">{po.supplierName}</p>
+
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>
+                          ₹{po.totalAmount.toLocaleString('en-IN')}
+                        </p>
+                        <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          Exp: {po.expectedDeliveryDate}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-white">₹{po.totalAmount.toLocaleString('en-IN')}</p>
-                      <p className="text-[11px] text-zinc-500">Exp: {po.expectedDeliveryDate}</p>
+                    <div style={{
+                      marginTop: '0.75rem',
+                      paddingTop: '0.5rem',
+                      borderTop: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                    }}>
+                      <span>{po.items.length} line item(s)</span>
+                      <span>Order Date: {po.orderDate}</span>
                     </div>
                   </div>
-
-                  <div className="mt-3 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400">
-                    <span>{po.items.length} line items</span>
-                    <span>Order Date: {po.orderDate}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           {/* PO Detail Inspector */}
-          <div className="lg:col-span-5">
+          <div>
             {selectedPO ? (
-              <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 space-y-5 sticky top-6 shadow-xl">
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                boxShadow: 'var(--shadow-md)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                position: 'sticky',
+                top: '1rem',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '1px solid var(--border)',
+                }}>
                   <div>
-                    <h3 className="text-lg font-bold text-white">{selectedPO.poNumber}</h3>
-                    <p className="text-xs text-zinc-400">{selectedPO.supplierName}</p>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
+                      {selectedPO.poNumber}
+                    </h3>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Vendor: <strong style={{ color: 'var(--text)' }}>{selectedPO.supplierName}</strong>
+                    </p>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs border font-medium ${getStatusColor(selectedPO.status)}`}>
-                    {selectedPO.status}
-                  </span>
+                  {(() => {
+                    const st = getStatusStyle(selectedPO.status);
+                    return (
+                      <span style={{
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        background: st.bg,
+                        color: st.color,
+                        border: `1px solid ${st.border}`,
+                      }}>
+                        {selectedPO.status}
+                      </span>
+                    );
+                  })()}
                 </div>
 
-                {/* Line Items Table */}
+                {/* Line Items */}
                 <div>
-                  <h4 className="text-xs font-semibold uppercase text-zinc-400 mb-2">Ordered Ingredients</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  <h4 style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--text-muted)',
+                    margin: '0 0 0.5rem',
+                    letterSpacing: '0.04em',
+                  }}>
+                    Ordered Items Breakdown
+                  </h4>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    maxHeight: '220px',
+                    overflowY: 'auto',
+                  }}>
                     {selectedPO.items.map((item, idx) => (
-                      <div key={idx} className="p-2.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl text-xs flex items-center justify-between">
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          fontSize: '0.8rem',
+                        }}
+                      >
                         <div>
-                          <p className="font-medium text-white">{item.ingredientName}</p>
-                          <p className="text-[11px] text-zinc-500">
+                          <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                            {item.ingredientName}
+                          </p>
+                          <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                             {item.quantityOrdered} {item.unit} @ ₹{item.unitPrice}/{item.unit}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-zinc-200">₹{item.totalPrice.toLocaleString('en-IN')}</p>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ margin: 0, fontWeight: 700, color: 'var(--text)' }}>
+                            ₹{item.totalPrice.toLocaleString('en-IN')}
+                          </p>
                           {selectedPO.status === 'Received' && (
-                            <p className="text-[10px] text-emerald-400">✓ Received full</p>
+                            <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600 }}>
+                              ✓ Received Full
+                            </span>
                           )}
                         </div>
                       </div>
@@ -342,35 +616,80 @@ export const SupplierWorkspace: React.FC = () => {
                 </div>
 
                 {/* Financial Summary */}
-                <div className="bg-zinc-950/40 p-3 rounded-xl border border-zinc-800 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-zinc-400">
+                <div style={{
+                  padding: '0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.4rem',
+                  fontSize: '0.8rem',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                     <span>Subtotal</span>
                     <span>₹{selectedPO.subtotal.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between text-zinc-400">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                     <span>GST (5%)</span>
                     <span>₹{selectedPO.taxAmount.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold text-white pt-1.5 border-t border-zinc-800">
-                    <span>Total Amount</span>
-                    <span className="text-emerald-400">₹{selectedPO.totalAmount.toLocaleString('en-IN')}</span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontWeight: 700,
+                    color: 'var(--text)',
+                    paddingTop: '0.4rem',
+                    borderTop: '1px solid var(--border)',
+                    fontSize: '0.9rem',
+                  }}>
+                    <span>Total Cost</span>
+                    <span style={{ color: '#10b981' }}>₹{selectedPO.totalAmount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
                 {selectedPO.notes && (
-                  <div className="text-xs text-zinc-400 bg-zinc-950/30 p-2.5 rounded-xl border border-zinc-800/60">
-                    <span className="font-semibold text-zinc-300">Delivery Notes: </span>
+                  <div style={{
+                    padding: '0.7rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                  }}>
+                    <strong style={{ color: 'var(--text)' }}>Delivery Instructions: </strong>
                     {selectedPO.notes}
                   </div>
                 )}
 
-                {/* Action Pipeline Buttons */}
-                <div className="pt-2 border-t border-zinc-800 space-y-2">
-                  <p className="text-xs font-semibold text-zinc-400 mb-2">Status Workflow Actions:</p>
+                {/* Status Actions */}
+                <div style={{
+                  paddingTop: '0.5rem',
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                }}>
+                  <p style={{ margin: '0 0 0.25rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    Workflow Pipeline:
+                  </p>
                   {selectedPO.status === 'Draft' && (
                     <button
                       onClick={() => handleUpdatePOStatus(selectedPO.id, 'Approved')}
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                      style={{
+                        padding: '0.65rem',
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                      }}
                     >
                       <span>✓</span> Approve Purchase Order
                     </button>
@@ -378,23 +697,58 @@ export const SupplierWorkspace: React.FC = () => {
                   {selectedPO.status === 'Approved' && (
                     <button
                       onClick={() => handleUpdatePOStatus(selectedPO.id, 'Ordered')}
-                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                      style={{
+                        padding: '0.65rem',
+                        background: '#9333ea',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                      }}
                     >
-                      <span>📦</span> Dispatch & Mark as Ordered
+                      <span>📦</span> Dispatch & Mark In-Transit
                     </button>
                   )}
                   {selectedPO.status === 'Ordered' && (
                     <button
                       onClick={() => handleUpdatePOStatus(selectedPO.id, 'Received')}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                      style={{
+                        padding: '0.65rem',
+                        background: '#16a34a',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                      }}
                     >
-                      <span>📥</span> Receive Goods & Verify Delivery
+                      <span>📥</span> Receive Goods & Post Stock
                     </button>
                   )}
                   {selectedPO.status !== 'Received' && selectedPO.status !== 'Cancelled' && (
                     <button
                       onClick={() => handleUpdatePOStatus(selectedPO.id, 'Cancelled')}
-                      className="w-full py-2 bg-zinc-800 hover:bg-rose-950/50 hover:text-rose-400 text-zinc-400 border border-zinc-700/60 rounded-xl text-xs transition-all"
+                      style={{
+                        padding: '0.55rem',
+                        background: 'transparent',
+                        color: '#ef4444',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
                     >
                       Cancel Purchase Order
                     </button>
@@ -402,48 +756,106 @@ export const SupplierWorkspace: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-                Select a purchase order to inspect details.
+              <div style={{
+                padding: '2.5rem',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                background: 'var(--surface)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border)',
+              }}>
+                Select a purchase order to inspect its items and workflow actions.
               </div>
             )}
           </div>
         </div>
       ) : (
         /* Supplier Directory Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1rem',
+        }}>
           {suppliers.map(sup => (
-            <div key={sup.id} className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 transition-all space-y-4">
-              <div className="flex items-start justify-between">
+            <div
+              key={sup.id}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div>
-                  <h3 className="font-bold text-white text-base">{sup.name}</h3>
-                  <p className="text-xs text-orange-400 font-medium mt-0.5">{sup.category}</p>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>
+                    {sup.name}
+                  </h3>
+                  <span style={{
+                    display: 'inline-block',
+                    margin: '0.25rem 0 0',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    color: '#f97316',
+                    background: 'rgba(249, 115, 22, 0.1)',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                  }}>
+                    {sup.category}
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-xs rounded-lg">
+                <span style={{
+                  fontFamily: 'monospace',
+                  fontSize: '0.75rem',
+                  padding: '0.2rem 0.5rem',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-muted)',
+                }}>
                   {sup.code}
                 </span>
               </div>
 
-              <div className="space-y-1.5 text-xs text-zinc-400">
-                <p className="flex items-center gap-2">
-                  <span className="text-zinc-500">👤 Contact:</span> {sup.contactPerson}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                <p style={{ margin: 0 }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>👤 Contact:</span> {sup.contactPerson}
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-zinc-500">📞 Phone:</span> {sup.phone}
+                <p style={{ margin: 0 }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>📞 Phone:</span> {sup.phone}
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-zinc-500">✉️ Email:</span> {sup.email}
+                <p style={{ margin: 0 }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>✉️ Email:</span> {sup.email}
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-zinc-500">💳 Terms:</span>
-                  <span className="px-2 py-0.5 bg-zinc-800 text-amber-300 font-semibold rounded text-[11px]">
+                <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 500 }}>💳 Terms:</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.1rem 0.45rem',
+                    borderRadius: '4px',
+                    background: 'rgba(245, 158, 11, 0.12)',
+                    color: '#f59e0b',
+                  }}>
                     {sup.paymentTerms}
                   </span>
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs">
-                <span className="text-zinc-500">Rating: ⭐ {sup.rating}/5.0</span>
-                <span className="text-emerald-400 font-medium">● {sup.status}</span>
+              <div style={{
+                paddingTop: '0.75rem',
+                borderTop: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.78rem',
+              }}>
+                <span style={{ color: '#f59e0b', fontWeight: 600 }}>⭐ {sup.rating} / 5.0</span>
+                <span style={{ color: '#10b981', fontWeight: 600 }}>● {sup.status}</span>
               </div>
             </div>
           ))}
@@ -452,67 +864,141 @@ export const SupplierWorkspace: React.FC = () => {
 
       {/* New Purchase Order Modal */}
       {showPOModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>📄</span> Create Purchase Order
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '600px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '1.5rem',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>📄</span> Create New Purchase Order
               </h3>
-              <button onClick={() => setShowPOModal(false)} className="text-zinc-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setShowPOModal(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreatePO} className="space-y-4">
+            <form onSubmit={handleCreatePO} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1.5">Supplier</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Target Supplier *
+                </label>
                 <select
                   required
                   value={newPOSupplierId}
                   onChange={e => setNewPOSupplierId(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                  }}
                 >
-                  <option value="">Select Supplier...</option>
+                  <option value="">Select a registered supplier...</option>
                   {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.category} · {s.paymentTerms})</option>
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.category} · {s.paymentTerms})
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1.5">Expected Delivery Date</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Expected Delivery Date *
+                </label>
                 <input
                   type="date"
                   required
                   value={newPOExpectedDate}
                   onChange={e => setNewPOExpectedDate(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              {/* Items Section */}
+              {/* Order Items Rows */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-semibold uppercase text-zinc-400">Order Items</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Order Items Breakdown
+                  </label>
                   <button
                     type="button"
                     onClick={() => setNewPOItems(prev => [...prev, { ingredientName: '', quantityOrdered: 5, unit: 'kg', unitPrice: 100 }])}
-                    className="text-xs text-orange-400 hover:text-orange-300 font-medium"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#f97316',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
                   >
-                    + Add Row
+                    + Add Ingredient Row
                   </button>
                 </div>
 
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {newPOItems.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <input
                         placeholder="Ingredient / Item Name"
                         required
                         value={item.ingredientName}
                         onChange={e => {
                           const val = e.target.value;
-                          setNewPOItems(prev => prev.map((it, i) => i === idx ? { ...it, ingredientName: val } : it));
+                          setNewPOItems(prev => prev.map((it, i) => (i === idx ? { ...it, ingredientName: val } : it)));
                         }}
-                        className="col-span-5 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200"
+                        style={{
+                          flex: 3,
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.45rem 0.6rem',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          outline: 'none',
+                        }}
                       />
                       <input
                         type="number"
@@ -522,9 +1008,18 @@ export const SupplierWorkspace: React.FC = () => {
                         value={item.quantityOrdered}
                         onChange={e => {
                           const val = Number(e.target.value);
-                          setNewPOItems(prev => prev.map((it, i) => i === idx ? { ...it, quantityOrdered: val } : it));
+                          setNewPOItems(prev => prev.map((it, i) => (i === idx ? { ...it, quantityOrdered: val } : it)));
                         }}
-                        className="col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-zinc-200"
+                        style={{
+                          width: '65px',
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.45rem 0.5rem',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          outline: 'none',
+                        }}
                       />
                       <input
                         placeholder="Unit"
@@ -532,9 +1027,18 @@ export const SupplierWorkspace: React.FC = () => {
                         value={item.unit}
                         onChange={e => {
                           const val = e.target.value;
-                          setNewPOItems(prev => prev.map((it, i) => i === idx ? { ...it, unit: val } : it));
+                          setNewPOItems(prev => prev.map((it, i) => (i === idx ? { ...it, unit: val } : it)));
                         }}
-                        className="col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-zinc-200"
+                        style={{
+                          width: '55px',
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.45rem 0.5rem',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          outline: 'none',
+                        }}
                       />
                       <input
                         type="number"
@@ -543,15 +1047,31 @@ export const SupplierWorkspace: React.FC = () => {
                         value={item.unitPrice}
                         onChange={e => {
                           const val = Number(e.target.value);
-                          setNewPOItems(prev => prev.map((it, i) => i === idx ? { ...it, unitPrice: val } : it));
+                          setNewPOItems(prev => prev.map((it, i) => (i === idx ? { ...it, unitPrice: val } : it)));
                         }}
-                        className="col-span-2 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-zinc-200"
+                        style={{
+                          width: '75px',
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.45rem 0.5rem',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          outline: 'none',
+                        }}
                       />
                       {newPOItems.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setNewPOItems(prev => prev.filter((_, i) => i !== idx))}
-                          className="col-span-1 text-zinc-500 hover:text-rose-400 text-xs"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            padding: '0 0.25rem',
+                          }}
                         >
                           ✕
                         </button>
@@ -562,26 +1082,59 @@ export const SupplierWorkspace: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1.5">Delivery Notes</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Delivery Instructions & Notes
+                </label>
                 <textarea
-                  placeholder="e.g. Refrigerated delivery required, delivery dock open 8am-11am"
+                  placeholder="e.g. Temperature-controlled truck required, deliver to Dock 2 between 7am and 10am"
                   value={newPONotes}
                   onChange={e => setNewPONotes(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500 resize-none h-20"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    minHeight: '70px',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   onClick={() => setShowPOModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{
+                    padding: '0.55rem 1rem',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  }}
                 >
                   Generate Purchase Order
                 </button>
@@ -593,57 +1146,134 @@ export const SupplierWorkspace: React.FC = () => {
 
       {/* Add Supplier Modal */}
       {showSupplierModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '1.5rem',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>🏢</span> Register New Supplier
               </h3>
-              <button onClick={() => setShowSupplierModal(false)} className="text-zinc-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setShowSupplierModal(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateSupplier} className="space-y-3">
+            <form onSubmit={handleCreateSupplier} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Company / Vendor Name</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Company / Vendor Name *
+                </label>
                 <input
                   required
                   placeholder="e.g. Sunrise Organic Dairy"
                   value={newSupplier.name}
                   onChange={e => setNewSupplier(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Contact Person</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Contact Person *
+                  </label>
                   <input
                     required
-                    placeholder="Contact full name"
+                    placeholder="Contact name"
                     value={newSupplier.contactPerson}
                     onChange={e => setNewSupplier(prev => ({ ...prev, contactPerson: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Phone</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Phone *
+                  </label>
                   <input
                     required
                     placeholder="Mobile / Office"
                     value={newSupplier.phone}
                     onChange={e => setNewSupplier(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Category</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Category
+                  </label>
                   <select
                     value={newSupplier.category}
                     onChange={e => setNewSupplier(prev => ({ ...prev, category: e.target.value as SupplierCategory }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="Produce">Produce</option>
                     <option value="Dairy & Cheese">Dairy & Cheese</option>
@@ -654,13 +1284,25 @@ export const SupplierWorkspace: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Payment Terms</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Payment Terms
+                  </label>
                   <select
                     value={newSupplier.paymentTerms}
                     onChange={e => setNewSupplier(prev => ({ ...prev, paymentTerms: e.target.value as any }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
-                    <option value="COD">COD</option>
+                    <option value="COD">COD (Cash on Delivery)</option>
                     <option value="Net 7">Net 7</option>
                     <option value="Net 15">Net 15</option>
                     <option value="Net 30">Net 30</option>
@@ -669,39 +1311,82 @@ export const SupplierWorkspace: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Email</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Email Address *
+                </label>
                 <input
                   type="email"
                   required
                   placeholder="orders@vendor.example"
                   value={newSupplier.email}
                   onChange={e => setNewSupplier(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Address / Warehouse</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Warehouse / Dispatch Address
+                </label>
                 <input
                   required
-                  placeholder="Full warehouse or delivery origin address"
+                  placeholder="Street, City, Warehouse Unit"
                   value={newSupplier.address}
                   onChange={e => setNewSupplier(prev => ({ ...prev, address: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   onClick={() => setShowSupplierModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{
+                    padding: '0.55rem 1rem',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  }}
                 >
                   Save Supplier
                 </button>
@@ -713,4 +1398,3 @@ export const SupplierWorkspace: React.FC = () => {
     </div>
   );
 };
-

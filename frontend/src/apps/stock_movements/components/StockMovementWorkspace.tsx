@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { stockMovementApi } from '../api';
-import { StockMovement, VarianceSummary, MovementType, MovementLocation, WasteReason, CreateStockMovementDto } from '../types';
+import { StockMovement, VarianceSummary, MovementType, MovementLocation, CreateStockMovementDto } from '../types';
 
 export const StockMovementWorkspace: React.FC = () => {
   const [movements, setMovements] = useState<StockMovement[]>([]);
@@ -28,14 +28,15 @@ export const StockMovementWorkspace: React.FC = () => {
     toLocation: 'Disposal / Waste Bin',
     reason: 'Overripe',
     notes: '',
-    performedBy: 'Current Staff',
+    performedBy: 'Staff In-Charge',
   });
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [movData, sumData] = await Promise.all([
-        stockMovementApi.getMovements(selectedType),
+        stockMovementApi.getMovements(selectedType !== 'all' ? selectedType : undefined),
         stockMovementApi.getVarianceSummary(),
       ]);
       setMovements(movData || []);
@@ -86,11 +87,14 @@ export const StockMovementWorkspace: React.FC = () => {
 
   const handleCreateMovement = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newMovement.itemName.trim()) {
+      alert('Please specify an ingredient or item name');
+      return;
+    }
     try {
       const created = await stockMovementApi.createMovement(newMovement);
       setMovements(prev => [created, ...prev]);
       setShowMovementModal(false);
-      // Refresh summary
       const updatedSummary = await stockMovementApi.getVarianceSummary();
       setSummary(updatedSummary);
     } catch (err: any) {
@@ -98,53 +102,111 @@ export const StockMovementWorkspace: React.FC = () => {
     }
   };
 
-  const getTypeBadge = (type: MovementType) => {
+  const getTypeStyle = (type: MovementType): { bg: string; color: string; border: string } => {
     switch (type) {
       case 'Waste':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+        return { bg: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: 'rgba(239, 68, 68, 0.3)' };
       case 'Transfer':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        return { bg: 'rgba(59, 130, 246, 0.12)', color: '#60a5fa', border: 'rgba(59, 130, 246, 0.3)' };
       case 'Adjustment':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        return { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.3)' };
       case 'CountVariance':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+        return { bg: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
       default:
-        return 'bg-zinc-800 text-zinc-300 border-zinc-700';
+        return { bg: 'var(--surface-muted)', color: 'var(--text-muted)', border: 'var(--border)' };
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minHeight: '100%' }}>
       {/* Top Header & Fast Action Launchers */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              ⚖️
-            </span>
-            Stock Movements, Waste & Transfers
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Kitchen spoilage tracking, inter-department station transfers & inventory count adjustments
-          </p>
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        paddingBottom: '0.5rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '42px',
+            height: '42px',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(239, 68, 68, 0.12)',
+            color: '#ef4444',
+            fontSize: '1.25rem',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+          }}>
+            ⚖️
+          </span>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+              Stock Movements, Waste & Transfers
+            </h1>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+              Kitchen spoilage audit, departmental station transfers, and physical inventory variance tracking
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
           <button
             onClick={() => handleOpenModal('Waste')}
-            className="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-500 text-white rounded-xl font-medium text-xs transition-all shadow-md shadow-rose-950/40 flex items-center gap-1.5"
+            style={{
+              padding: '0.55rem 1rem',
+              background: 'rgba(239, 68, 68, 0.9)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+            }}
           >
             <span>🗑️</span> Log Waste / Spoilage
           </button>
           <button
             onClick={() => handleOpenModal('Transfer')}
-            className="px-3.5 py-2 bg-blue-600/90 hover:bg-blue-500 text-white rounded-xl font-medium text-xs transition-all shadow-md shadow-blue-950/40 flex items-center gap-1.5"
+            style={{
+              padding: '0.55rem 1rem',
+              background: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+            }}
           >
-            <span>🔄</span> Internal Transfer
+            <span>🔄</span> Station Transfer
           </button>
           <button
             onClick={() => handleOpenModal('CountVariance')}
-            className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl font-medium text-xs transition-all flex items-center gap-1.5"
+            style={{
+              padding: '0.55rem 1rem',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
           >
             <span>📊</span> Count Variance
           </button>
@@ -152,43 +214,123 @@ export const StockMovementWorkspace: React.FC = () => {
       </div>
 
       {/* KPI Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Waste Loss</p>
-          <p className="text-2xl font-bold text-rose-400 mt-1">₹{summary?.totalWasteCost.toLocaleString('en-IN') || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Spoilage & prep discards</p>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '1rem',
+      }}>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Total Waste Loss
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f87171', margin: '0.35rem 0 0.15rem' }}>
+            ₹{summary?.totalWasteCost.toLocaleString('en-IN') || 0}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Direct kitchen & prep discards
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Variance Discrepancy</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">₹{summary?.totalAdjustmentCost.toLocaleString('en-IN') || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Physical audit reconciliations</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Variance Discrepancy
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f59e0b', margin: '0.35rem 0 0.15rem' }}>
+            ₹{summary?.totalAdjustmentCost.toLocaleString('en-IN') || 0}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Physical audit reconciliation cost
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Station Transfers</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{summary?.totalTransfersCount || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Dry store & walk-in handoffs</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Station Transfers
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#60a5fa', margin: '0.35rem 0 0.15rem' }}>
+            {summary?.totalTransfersCount || 0}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Dry store & prep line handoffs
+          </span>
         </div>
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-sm">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Total Movement Audit</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{summary?.recentMovementsCount || 0}</p>
-          <p className="text-xs text-zinc-500 mt-1">Recorded audit entries</p>
+
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1.1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, letterSpacing: '0.04em' }}>
+            Audit Movement Records
+          </p>
+          <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#34d399', margin: '0.35rem 0 0.15rem' }}>
+            {summary?.recentMovementsCount || 0}
+          </p>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            Verified immutable audit entries
+          </span>
         </div>
       </div>
 
-      {/* Spoilage Breakdown Pills */}
+      {/* Wastage Root Cause Breakdown Banner */}
       {summary?.wasteByReason && Object.keys(summary.wasteByReason).length > 0 && (
-        <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-          <p className="text-xs font-semibold uppercase text-zinc-400 mb-2.5">Wastage Root Cause Attribution:</p>
-          <div className="flex flex-wrap gap-2">
+        <div style={{
+          padding: '1rem 1.25rem',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            margin: '0 0 0.65rem 0',
+            letterSpacing: '0.04em',
+          }}>
+            Wastage Root Cause Attribution:
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {Object.entries(summary.wasteByReason).map(([reason, data]) => (
               <span
                 key={reason}
-                className="px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-center gap-2"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  fontSize: '0.78rem',
+                  color: 'var(--text)',
+                }}
               >
-                <span className="font-medium text-rose-400">{reason}</span>
-                <span className="text-zinc-500">·</span>
-                <span>{data.count} items</span>
-                <span className="font-semibold text-white">₹{data.cost.toLocaleString('en-IN')}</span>
+                <span style={{ fontWeight: 600, color: '#f87171' }}>{reason}</span>
+                <span style={{ color: 'var(--text-muted)' }}>·</span>
+                <span style={{ color: 'var(--text-muted)' }}>{data.count} logged</span>
+                <span style={{ fontWeight: 700, color: 'var(--text)' }}>₹{data.cost.toLocaleString('en-IN')}</span>
               </span>
             ))}
           </div>
@@ -196,16 +338,28 @@ export const StockMovementWorkspace: React.FC = () => {
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        borderBottom: '1px solid var(--border)',
+        paddingBottom: '0.75rem',
+      }}>
         {(['all', 'Waste', 'Transfer', 'Adjustment', 'CountVariance'] as const).map(type => (
           <button
             key={type}
             onClick={() => setSelectedType(type)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              selectedType === type
-                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-            }`}
+            style={{
+              padding: '0.45rem 0.9rem',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: selectedType === type ? '1px solid rgba(249, 115, 22, 0.4)' : '1px solid transparent',
+              background: selectedType === type ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+              color: selectedType === type ? '#f97316' : 'var(--text-muted)',
+              transition: 'all 0.15s ease',
+            }}
           >
             {type === 'all' ? 'All Movements' : type}
           </button>
@@ -214,62 +368,108 @@ export const StockMovementWorkspace: React.FC = () => {
 
       {/* Movements Audit Table */}
       {loading ? (
-        <div className="p-12 text-center text-zinc-500 animate-pulse">Loading stock movement logs...</div>
+        <div style={{
+          padding: '3rem',
+          textAlign: 'center',
+          color: 'var(--text-muted)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+        }}>
+          Loading stock movements...
+        </div>
       ) : movements.length === 0 ? (
-        <div className="p-8 text-center text-zinc-500 bg-zinc-900/40 border border-zinc-800 rounded-2xl">
+        <div style={{
+          padding: '2.5rem',
+          textAlign: 'center',
+          color: 'var(--text-muted)',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+        }}>
           No stock movements recorded for this filter.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/50">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-zinc-950/60 border-b border-zinc-800 text-zinc-400 uppercase text-[11px] font-semibold">
-              <tr>
-                <th className="py-3 px-4">Movement #</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Ingredient / Item</th>
-                <th className="py-3 px-4">Quantity</th>
-                <th className="py-3 px-4">Financial Impact</th>
-                <th className="py-3 px-4">From → To</th>
-                <th className="py-3 px-4">Reason & Notes</th>
-                <th className="py-3 px-4">Staff</th>
-                <th className="py-3 px-4">Logged At</th>
+        <div style={{
+          overflowX: 'auto',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '0.75rem 1rem' }}>Movement #</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Type</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Ingredient / Item</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Quantity</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Financial Impact</th>
+                <th style={{ padding: '0.75rem 1rem' }}>From → To</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Reason & Notes</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Staff</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Logged At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
-              {movements.map(m => (
-                <tr key={m.id} className="hover:bg-zinc-800/40 transition-colors">
-                  <td className="py-3 px-4 font-mono font-semibold text-white">{m.movementNumber}</td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded-full border text-[11px] font-medium ${getTypeBadge(m.type)}`}>
-                      {m.type}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="font-medium text-white">{m.itemName}</p>
-                    <p className="text-[10px] text-zinc-500 font-mono">{m.sku}</p>
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-zinc-200">
-                    {m.quantity > 0 ? `+${m.quantity}` : m.quantity} {m.unit}
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-rose-400">
-                    ₹{m.totalCost.toLocaleString('en-IN')}
-                  </td>
-                  <td className="py-3 px-4 text-zinc-400">
-                    <span className="text-zinc-300">{m.fromLocation}</span>
-                    <span className="text-zinc-600 mx-1.5">→</span>
-                    <span className="text-zinc-300">{m.toLocation}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="text-zinc-200 font-medium">{m.reason}</p>
-                    {m.notes && <p className="text-[10px] text-zinc-500 mt-0.5">{m.notes}</p>}
-                  </td>
-                  <td className="py-3 px-4 text-zinc-400">{m.performedBy}</td>
-                  <td className="py-3 px-4 text-zinc-500 text-[11px] whitespace-nowrap">
-                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
-                    {new Date(m.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                  </td>
-                </tr>
-              ))}
+            <tbody>
+              {movements.map((m, idx) => {
+                const typeStyle = getTypeStyle(m.type);
+                return (
+                  <tr
+                    key={m.id}
+                    style={{
+                      borderBottom: idx === movements.length - 1 ? 'none' : '1px solid var(--border)',
+                      color: 'var(--text)',
+                      transition: 'background 0.15s ease',
+                    }}
+                  >
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontWeight: 700 }}>
+                      {m.movementNumber}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span style={{
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        background: typeStyle.bg,
+                        color: typeStyle.color,
+                        border: `1px solid ${typeStyle.border}`,
+                      }}>
+                        {m.type}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{m.itemName}</p>
+                      <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        {m.sku}
+                      </p>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
+                      {m.quantity > 0 ? `+${m.quantity}` : m.quantity} {m.unit}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: m.type === 'Waste' ? '#f87171' : 'var(--text)' }}>
+                      ₹{m.totalCost.toLocaleString('en-IN')}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                      <span style={{ color: 'var(--text)' }}>{m.fromLocation}</span>
+                      <span style={{ margin: '0 0.4rem', color: 'var(--text-muted)' }}>→</span>
+                      <span style={{ color: 'var(--text)' }}>{m.toLocation}</span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <p style={{ margin: 0, fontWeight: 500 }}>{m.reason}</p>
+                      {m.notes && <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>{m.notes}</p>}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
+                      {m.performedBy}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
+                      {new Date(m.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -277,69 +477,158 @@ export const StockMovementWorkspace: React.FC = () => {
 
       {/* Log Stock Movement Modal */}
       {showMovementModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '1.5rem',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>{modalMode === 'Waste' ? '🗑️' : modalMode === 'Transfer' ? '🔄' : '📊'}</span>
                 Record {modalMode} Entry
               </h3>
-              <button onClick={() => setShowMovementModal(false)} className="text-zinc-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setShowMovementModal(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateMovement} className="space-y-3">
+            <form onSubmit={handleCreateMovement} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Ingredient / Item Name</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Ingredient / Item Name *
+                </label>
                 <input
                   required
                   placeholder="e.g. Heirloom Vine Tomatoes, Mascarpone, A5 Wagyu"
                   value={newMovement.itemName}
                   onChange={e => setNewMovement(prev => ({ ...prev, itemName: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.65rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Quantity</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Quantity
+                  </label>
                   <input
                     type="number"
                     step="0.1"
                     required
                     value={newMovement.quantity}
                     onChange={e => setNewMovement(prev => ({ ...prev, quantity: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Unit</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Unit
+                  </label>
                   <input
                     required
                     value={newMovement.unit}
                     onChange={e => setNewMovement(prev => ({ ...prev, unit: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Unit Cost (₹)</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Unit Cost (₹)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
                     required
                     value={newMovement.unitCost}
                     onChange={e => setNewMovement(prev => ({ ...prev, unitCost: Number(e.target.value) }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Origin Location</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Origin Station
+                  </label>
                   <select
                     value={newMovement.fromLocation}
                     onChange={e => setNewMovement(prev => ({ ...prev, fromLocation: e.target.value as MovementLocation }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="Dry store">Dry store</option>
                     <option value="Walk-in chiller">Walk-in chiller</option>
@@ -350,11 +639,23 @@ export const StockMovementWorkspace: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Destination Location</label>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                    Destination Station
+                  </label>
                   <select
                     value={newMovement.toLocation}
                     onChange={e => setNewMovement(prev => ({ ...prev, toLocation: e.target.value as MovementLocation }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.65rem',
+                      color: 'var(--text)',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
                     <option value="Disposal / Waste Bin">Disposal / Waste Bin</option>
                     <option value="Hot line">Hot line</option>
@@ -367,18 +668,30 @@ export const StockMovementWorkspace: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Primary Reason</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Primary Cause / Reason
+                </label>
                 {modalMode === 'Waste' ? (
                   <select
                     value={newMovement.reason}
                     onChange={e => setNewMovement(prev => ({ ...prev, reason: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   >
-                    <option value="Overripe">Overripe / Spoilage</option>
-                    <option value="Spillage">Spillage / Dropped</option>
-                    <option value="Burnt">Burnt / Overcooked</option>
+                    <option value="Overripe">Overripe / Natural Spoilage</option>
+                    <option value="Spillage">Spillage / Dropped Floor Contamination</option>
+                    <option value="Burnt">Burnt / Cooking Error</option>
                     <option value="Expired">Passed Expiration Date</option>
-                    <option value="Damaged Packaging">Damaged Packaging</option>
+                    <option value="Damaged Packaging">Damaged Inbound Packaging</option>
                     <option value="Quality Standard Rejection">Quality Standard Rejection</option>
                   </select>
                 ) : (
@@ -387,32 +700,75 @@ export const StockMovementWorkspace: React.FC = () => {
                     placeholder="e.g. Shift Restock, Physical Count Variance, Transfer to Bar"
                     value={newMovement.reason}
                     onChange={e => setNewMovement(prev => ({ ...prev, reason: e.target.value }))}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200"
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.55rem 0.75rem',
+                      color: 'var(--text)',
+                      fontSize: '0.85rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-zinc-400 mb-1">Incident Notes / Cause</label>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Incident Notes & Root Cause Description
+                </label>
                 <textarea
                   placeholder="Additional context on the root cause or destination..."
                   value={newMovement.notes}
                   onChange={e => setNewMovement(prev => ({ ...prev, notes: e.target.value }))}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 resize-none h-18"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.75rem',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    minHeight: '65px',
+                    resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-zinc-800">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
                 <button
                   type="button"
                   onClick={() => setShowMovementModal(false)}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium"
+                  style={{
+                    padding: '0.55rem 1rem',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-medium shadow-lg"
+                  style={{
+                    padding: '0.55rem 1.25rem',
+                    background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    color: '#ffffff',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                  }}
                 >
                   Submit Stock Movement
                 </button>
@@ -424,4 +780,3 @@ export const StockMovementWorkspace: React.FC = () => {
     </div>
   );
 };
-

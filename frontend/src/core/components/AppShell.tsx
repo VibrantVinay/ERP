@@ -53,6 +53,15 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Reports & Analytics', href: '/reports', icon: '📈' },
     ],
   },
+  {
+    section: 'Management & Admin',
+    items: [
+      { label: 'Multi-Unit Branches', href: '/branches', icon: '🏛️' },
+      { label: 'Users & RBAC', href: '/users', icon: '👤' },
+      { label: 'Audit Trail', href: '/audit', icon: '🛡️' },
+      { label: 'System Settings', href: '/settings', icon: '⚙️' },
+    ],
+  },
 ];
 
 /**
@@ -64,11 +73,11 @@ export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
   server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
   cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff'],
   driver: ['/delivery', '/orders', '/staff'],
-  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff', '/equipment', '/finance', '/reports'],
+  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff', '/equipment', '/finance', '/reports', '/branches', '/audit'],
   bartender: ['/pos', '/kitchen', '/menu', '/inventory', '/stock-movements', '/staff', '/tasks', '/equipment'],
   host: ['/tables', '/reservations', '/customers', '/feedback', '/staff', '/tasks'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff', '/tasks', '/equipment', '/finance', '/reports', '/branches', '/users', '/audit', '/settings'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {

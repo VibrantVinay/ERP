@@ -43,20 +43,26 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Stock Movements', href: '/stock-movements', icon: '⚖️' },
     ],
   },
+  {
+    section: 'Team & Operations',
+    items: [
+      { label: 'Staff & Shifts', href: '/staff', icon: '👔' },
+    ],
+  },
 ];
 
 /**
  * Strict Role-Based Access Control (RBAC) rules
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
-  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
-  cleaner: ['/tables'],
-  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback'],
-  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback'],
-  driver: ['/delivery', '/orders'],
-  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements'],
+  chef: ['/kitchen', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
+  cleaner: ['/tables', '/staff'],
+  server: ['/pos', '/tables', '/reservations', '/customers', '/feedback', '/staff'],
+  cashier: ['/pos', '/orders', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/staff'],
+  driver: ['/delivery', '/orders', '/staff'],
+  accountant: ['/orders', '/inventory', '/menu', '/recipes', '/suppliers', '/stock-movements', '/loyalty', '/staff'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/customers', '/loyalty', '/feedback', '/menu', '/recipes', '/inventory', '/suppliers', '/stock-movements', '/staff'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {

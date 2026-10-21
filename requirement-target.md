@@ -306,11 +306,6 @@ Supported 7 core roles:
   * `PATCH  /api/v1/feedback/:id/assign`
   * `PATCH  /api/v1/feedback/:id/resolve`
 
----
-# DONE TILL THIS
-
----
-
 ### App 16: `staff` (Staff, Shifts & Attendance)
 * **Entities**: `StaffMember`, `ShiftSchedule`, `AttendanceRecord`, `PayrollSummary`
 * **Features**:
@@ -323,6 +318,11 @@ Supported 7 core roles:
   * `GET    /api/v1/staff/shifts`
   * `POST   /api/v1/staff/attendance/clock`
   * `GET    /api/v1/staff/payroll-summary`
+
+---
+# DONE TILL THIS
+
+---
 
 ---
 

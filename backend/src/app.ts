@@ -21,6 +21,7 @@ import { stockMovementsApp } from './apps/stock_movements';
 import { customersApp } from './apps/customers';
 import { loyaltyApp } from './apps/loyalty';
 import { feedbackApp } from './apps/feedback';
+import { staffApp } from './apps/staff';
 
 export const INSTALLED_APPS = [
   authApp,
@@ -38,6 +39,7 @@ export const INSTALLED_APPS = [
   customersApp,
   loyaltyApp,
   feedbackApp,
+  staffApp,
 ];
 
 export async function createApp(): Promise<Express> {

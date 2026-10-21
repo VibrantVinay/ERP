@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, getLandingRouteForRole } from '@/apps/auth/context/AuthContext';
 import { LoginPortal } from '@/apps/auth/components/LoginPortal';
-import { StaffRole } from '@/apps/auth/types';
+import { StaffRole, DEFAULT_DEMO_PERSONAS } from '@/apps/auth/types';
 
 interface NavItem {
   label: string;
@@ -26,12 +26,15 @@ const ALL_NAV_GROUPS: NavGroup[] = [
       { label: 'Orders', href: '/orders', icon: '↗' },
       { label: 'Kitchen Display', href: '/kitchen', icon: '♨' },
       { label: 'Tables & Floor', href: '/tables', icon: '▦' },
+      { label: 'Reservations', href: '/reservations', icon: '📅' },
+      { label: 'Delivery Dispatch', href: '/delivery', icon: '🛵' },
     ],
   },
   {
     section: 'Menu & Stock',
     items: [
       { label: 'Menu & Items', href: '/menu', icon: '▧' },
+      { label: 'Recipes (BOM)', href: '/recipes', icon: '🧾' },
       { label: 'Inventory & Stock', href: '/inventory', icon: '▣' },
     ],
   },
@@ -41,20 +44,20 @@ const ALL_NAV_GROUPS: NavGroup[] = [
  * Strict Role-Based Access Control (RBAC) rules
  */
 export const ROLE_ALLOWED_ROUTES: Record<StaffRole, string[]> = {
-  chef: ['/kitchen', '/menu', '/inventory'],
+  chef: ['/kitchen', '/menu', '/recipes', '/inventory'],
   cleaner: ['/tables'],
-  server: ['/pos', '/tables'],
-  cashier: ['/pos', '/orders'],
-  driver: ['/orders'],
-  accountant: ['/orders', '/inventory', '/menu'],
-  manager: ['/pos', '/orders', '/kitchen', '/tables', '/menu', '/inventory'],
-  owner: ['/pos', '/orders', '/kitchen', '/tables', '/menu', '/inventory'],
+  server: ['/pos', '/tables', '/reservations'],
+  cashier: ['/pos', '/orders', '/reservations', '/delivery'],
+  driver: ['/delivery', '/orders'],
+  accountant: ['/orders', '/inventory', '/menu', '/recipes'],
+  manager: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory'],
+  owner: ['/pos', '/orders', '/kitchen', '/tables', '/reservations', '/delivery', '/menu', '/recipes', '/inventory'],
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, token, loading, switchBranch, logout } = useAuth();
+  const { user, token, loading, switchBranch, logout, loginAsPersona } = useAuth();
 
   // If on the root login portal or /login, render without sidebar/topbar
   if (pathname === '/' || pathname === '/login') {
@@ -202,7 +205,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area with Unauthorized Route Guard */}
-        <div className="page-container">
+        <div className="page-container" style={{ paddingBottom: '3.5rem' }}>
           {isAuthorized ? (
             children
           ) : (
@@ -221,6 +224,61 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           )}
+        </div>
+
+        {/* ⚡ 1-Click Role Switcher Bar (Always Available in App Shell) */}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: '#19241b',
+            borderTop: '1px solid #2e4134',
+            padding: '0.45rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+            zIndex: 9999,
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#9bb29d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ⚡ 1-Click Role Switcher (Testing):
+            </span>
+            <span style={{ fontSize: '0.72rem', color: '#cad8c9' }}>
+              Current: <strong style={{ color: '#fff', textTransform: 'uppercase' }}>{user.role}</strong> ({user.name})
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+            {DEFAULT_DEMO_PERSONAS.map(p => {
+              const isActive = user.role === p.role;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => loginAsPersona(p)}
+                  style={{
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: 4,
+                    border: isActive ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.15)',
+                    background: isActive ? '#10b981' : 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title={`Switch to ${p.name} (${p.role}) - PIN: ${p.pin}`}
+                >
+                  {p.role.toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </main>
     </div>

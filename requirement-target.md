@@ -115,7 +115,6 @@ Supported 7 core roles:
   * `POST /api/v1/pos/tickets/:id/split` (Splits ticket into multiple sub-tickets)
 
 ---
-# DONE TILL THIS
 
 
 ### App 3: `orders` (Order Management Lifecycle)
@@ -243,6 +242,7 @@ Supported 7 core roles:
   * `GET    /api/v1/inventory/locations`
 
 ---
+# DONE TILL THIS
 
 ### App 11: `suppliers` (Procurement & Purchasing)
 * **Entities**: `Supplier`, `PurchaseOrder`, `PurchaseOrderItem`, `GoodsReceipt`

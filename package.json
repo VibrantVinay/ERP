@@ -8,6 +8,7 @@
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
     "clean": "npm --prefix frontend run clean",
+    "seed": "npm --prefix backend run seed",
     "clean:users": "npm --prefix backend run clean:users",
     "build:backend": "npm --prefix backend run build",
     "build:frontend": "npm --prefix frontend run build"

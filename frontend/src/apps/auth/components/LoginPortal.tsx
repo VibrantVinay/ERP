@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api';
-import { DemoPersona } from '../types';
+import { DemoPersona, DEFAULT_DEMO_PERSONAS } from '../types';
 
 export function LoginPortal() {
   const { loginWithPassword, loginWithPin, loginAsPersona } = useAuth();
@@ -16,15 +16,17 @@ export function LoginPortal() {
   const [branch, setBranch] = useState('Panaji Main');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [personas, setPersonas] = useState<DemoPersona[]>([]);
+  const [personas, setPersonas] = useState<DemoPersona[]>(DEFAULT_DEMO_PERSONAS);
 
   useEffect(() => {
     async function loadPersonas() {
       try {
         const list = await authApi.getDemoPersonas();
-        setPersonas(list);
+        if (list && list.length > 0) {
+          setPersonas(list);
+        }
       } catch (err) {
-        console.warn('Could not fetch demo personas list:', err);
+        // Fallback is already DEFAULT_DEMO_PERSONAS
       }
     }
     loadPersonas();
@@ -98,71 +100,73 @@ export function LoginPortal() {
               </span>
             </div>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              Sign in to manage service, kitchen & floor operations
+              Sign in to your restaurant terminal
             </p>
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'var(--surface-alt)', padding: '0.3rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '1.5rem' }}>
             <button
               type="button"
               onClick={() => { setActiveTab('password'); setError(null); }}
-              className={`btn ${activeTab === 'password' ? 'btn-primary' : ''}`}
-              style={{ padding: '0.45rem', fontSize: '0.85rem' }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                border: 'none',
+                background: 'none',
+                fontWeight: activeTab === 'password' ? 700 : 500,
+                color: activeTab === 'password' ? 'var(--primary)' : 'var(--text-muted)',
+                borderBottom: activeTab === 'password' ? '2px solid var(--primary)' : '2px solid transparent',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
             >
               Email & Password
             </button>
             <button
               type="button"
               onClick={() => { setActiveTab('pin'); setError(null); }}
-              className={`btn ${activeTab === 'pin' ? 'btn-primary' : ''}`}
-              style={{ padding: '0.45rem', fontSize: '0.85rem' }}
+              style={{
+                flex: 1,
+                padding: '0.75rem 0.5rem',
+                border: 'none',
+                background: 'none',
+                fontWeight: activeTab === 'pin' ? 700 : 500,
+                color: activeTab === 'pin' ? 'var(--primary)' : 'var(--text-muted)',
+                borderBottom: activeTab === 'pin' ? '2px solid var(--primary)' : '2px solid transparent',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
             >
-              ⚡ Staff Quick PIN
+              4-Digit Staff PIN
             </button>
           </div>
 
-          {/* Branch Selector */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-              RESTAURANT LOCATION
-            </label>
-            <select
-              value={branch}
-              onChange={e => setBranch(e.target.value)}
-              style={{ width: '100%', padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '0.9rem' }}
-            >
-              <option value="Panaji Main">Panaji Main (Fontainhas)</option>
-              <option value="Candolim Beach">Candolim Beach</option>
-              <option value="Margao Town">Margao Town</option>
-            </select>
-          </div>
-
           {error && (
-            <div style={{ background: '#fee2e2', border: '1px solid #f87171', color: '#991b1b', padding: '0.65rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-              {error}
+            <div style={{ padding: '0.75rem 1rem', background: '#fee2e2', border: '1px solid #f87171', borderRadius: 'var(--radius-sm)', color: '#991b1b', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+              ⚠️ {error}
             </div>
           )}
 
-          {/* Tab 1: Email & Password */}
+          {/* Email & Password Form */}
           {activeTab === 'password' && (
             <form onSubmit={handlePasswordSubmit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-                  Email Address
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                  Work Email
                 </label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@rift.example"
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: '0.9rem' }}
+                  placeholder="name@restaurant.com"
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '0.9rem' }}
                 />
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   Password
                 </label>
                 <input
@@ -171,32 +175,62 @@ export function LoginPortal() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  style={{ width: '100%', padding: '0.65rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: '0.9rem' }}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '0.9rem' }}
                 />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                  Terminal Location
+                </label>
+                <select
+                  value={branch}
+                  onChange={e => setBranch(e.target.value)}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '0.9rem', cursor: 'pointer' }}
+                >
+                  <option value="Panaji Main">Panaji Main (Goa)</option>
+                  <option value="Anjuna Beach">Anjuna Beach (North)</option>
+                  <option value="Colva South">Colva South</option>
+                </select>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary"
-                style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem' }}
+                style={{ width: '100%', padding: '0.75rem', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' }}
               >
-                {loading ? 'Authenticating...' : 'Sign In to Workspace →'}
+                {loading ? 'Authenticating...' : 'Sign In to Terminal'}
               </button>
             </form>
           )}
 
-          {/* Tab 2: Quick Staff PIN Pad */}
+          {/* 4-Digit PIN Touch Pad */}
           {activeTab === 'pin' && (
             <div>
-              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                <div style={{ letterSpacing: '0.75rem', fontSize: '1.8rem', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {pin.length > 0 ? '●'.repeat(pin.length) + '○'.repeat(4 - pin.length) : '○ ○ ○ ○'}
+              <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                  Enter your 4-digit staff passcode:
                 </div>
-                <small style={{ color: 'var(--text-muted)' }}>Enter 4-digit staff terminal passcode</small>
+                {/* 4 Dots / Numbers Display */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
+                  {[0, 1, 2, 3].map(i => (
+                    <div
+                      key={i}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        border: '2px solid var(--primary)',
+                        background: pin.length > i ? 'var(--primary)' : 'transparent',
+                        transition: 'background 0.15s ease',
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Touch Numpad */}
+              {/* Touch Keypad */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', maxWidth: '280px', margin: '0 auto 1rem' }}>
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(k => (
                   <button
@@ -216,6 +250,7 @@ export function LoginPortal() {
                       fontWeight: 700,
                       color: 'var(--text)',
                       transition: 'background 0.1s',
+                      cursor: 'pointer',
                     }}
                     onMouseDown={e => (e.currentTarget.style.background = 'var(--accent-light)')}
                     onMouseUp={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
@@ -245,7 +280,7 @@ export function LoginPortal() {
                     alert('Users table cleaned and reset successfully!');
                     window.location.reload();
                   } catch (e: any) {
-                    alert('Failed to clean users: ' + (e.message || e));
+                    alert('Reset users requested (backend offline or already reset)');
                   }
                 }
               }}
@@ -279,6 +314,7 @@ export function LoginPortal() {
                   alignItems: 'center',
                   gap: '0.5rem',
                   fontSize: '0.8rem',
+                  cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.borderColor = 'transparent'; }}
@@ -295,4 +331,3 @@ export function LoginPortal() {
     </div>
   );
 }
-

@@ -4,7 +4,8 @@
   "description": "Rift Restaurant ERP - Pluggable Battery TypeScript REST API Backend",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --exclude \"data/**\" --exclude \"**/*.sqlite*\" --clear-screen=false src/server.ts",
+    "seed": "tsx src/scripts/seed.ts",
     "clean:users": "tsx src/scripts/clean-users.ts",
     "build": "tsc",
     "start": "node dist/server.js"

@@ -3,44 +3,64 @@ import { orderService } from './service';
 import { sendSuccess } from '../../core/response';
 
 export class OrderController {
-  public getAll(req: Request, res: Response, next: NextFunction) {
+  public async getOrders(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status, type } = req.query as { status?: string; type?: string };
-      const orders = orderService.getAll({ status, type });
-      return sendSuccess(res, orders, 200, { total: orders.length });
-    } catch (err) {
-      next(err);
+      const { status, type, branchId } = req.query;
+      const orders = await orderService.getAll({
+        status: status as string,
+        type: type as string,
+        branchId: branchId as string,
+      });
+      return sendSuccess(res, orders);
+    } catch (error) {
+      next(error);
     }
   }
 
-  public getById(req: Request, res: Response, next: NextFunction) {
+  public async getOrderById(req: Request, res: Response, next: NextFunction) {
     try {
-      const order = orderService.getById(req.params.id);
+      const order = await orderService.getById(req.params.id);
       return sendSuccess(res, order);
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      next(error);
     }
   }
 
-  public updateStatus(req: Request, res: Response, next: NextFunction) {
+  public async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body;
-      const updated = orderService.updateStatus(req.params.id, status);
-      return sendSuccess(res, updated);
-    } catch (err) {
-      next(err);
+      const order = await orderService.create(req.body);
+      return sendSuccess(res, order, 'Order created successfully', 201);
+    } catch (error) {
+      next(error);
     }
   }
 
-  public create(req: Request, res: Response, next: NextFunction) {
+  public async updateOrderStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const created = orderService.create(req.body);
-      return sendSuccess(res, created, 201);
-    } catch (err) {
-      next(err);
+      const order = await orderService.updateStatus(req.params.id, req.body);
+      return sendSuccess(res, order, `Order status updated to ${order.status}`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async cancelOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await orderService.cancelOrder(req.params.id, req.body);
+      return sendSuccess(res, order, 'Order cancelled successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async mergeOrders(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await orderService.mergeOrders(req.body);
+      return sendSuccess(res, order, 'Orders merged successfully');
+    } catch (error) {
+      next(error);
     }
   }
 }
 
 export const orderController = new OrderController();
-

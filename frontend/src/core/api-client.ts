@@ -1,4 +1,5 @@
 import { clientConfig } from './config';
+import { DEFAULT_DEMO_PERSONAS } from '@/apps/auth/types';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -50,13 +51,30 @@ export async function restClient<T>(
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...(options.headers as Record<string, string>),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers as Record<string, string>),
+      },
+    });
+  } catch (netErr: any) {
+    console.warn(`[RIFT API] Failed to connect to ${url}:`, netErr?.message || netErr);
+
+    // If demo personas are requested, always return built-in personas so login works immediately
+    if (endpoint.includes('/auth/demo-personas')) {
+      return DEFAULT_DEMO_PERSONAS as any;
+    }
+
+    throw new ApiError(
+      `Cannot connect to Backend API server at ${clientConfig.apiUrl}. Please verify backend server is running ('npm run dev').`,
+      'BACKEND_CONNECTION_REFUSED',
+      503,
+      netErr
+    );
+  }
 
   const payload: ApiResponse<T> = await response.json().catch(() => ({
     success: false,
@@ -78,3 +96,42 @@ export async function restClient<T>(
 
   return payload.data;
 }
+
+export const apiClient = {
+  async get<T = any>(endpoint: string, options?: RequestInit): Promise<{ data: T }> {
+    const data = await restClient<T>(endpoint, { ...options, method: 'GET' });
+    return { data };
+  },
+
+  async post<T = any>(endpoint: string, body?: any, options?: RequestInit): Promise<{ data: T }> {
+    const data = await restClient<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return { data };
+  },
+
+  async put<T = any>(endpoint: string, body?: any, options?: RequestInit): Promise<{ data: T }> {
+    const data = await restClient<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return { data };
+  },
+
+  async patch<T = any>(endpoint: string, body?: any, options?: RequestInit): Promise<{ data: T }> {
+    const data = await restClient<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return { data };
+  },
+
+  async delete<T = any>(endpoint: string, options?: RequestInit): Promise<{ data: T }> {
+    const data = await restClient<T>(endpoint, { ...options, method: 'DELETE' });
+    return { data };
+  },
+};

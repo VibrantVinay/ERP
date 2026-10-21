@@ -11,6 +11,9 @@ import { posApp } from './apps/pos';
 import { ordersApp } from './apps/orders';
 import { kitchenApp } from './apps/kitchen';
 import { tablesApp } from './apps/tables';
+import { reservationsApp } from './apps/reservations';
+import { deliveryApp } from './apps/delivery';
+import { recipesApp } from './apps/recipes';
 import { menuApp } from './apps/menu';
 import { inventoryApp } from './apps/inventory';
 
@@ -20,6 +23,9 @@ export const INSTALLED_APPS = [
   ordersApp,
   kitchenApp,
   tablesApp,
+  reservationsApp,
+  deliveryApp,
+  recipesApp,
   menuApp,
   inventoryApp,
 ];

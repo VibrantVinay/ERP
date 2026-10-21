@@ -1,21 +1,46 @@
-import { restClient } from '@/core/api-client';
-import { InventoryItem } from './types';
+import { apiClient } from '../../core/api-client';
+import {
+  InventoryItem,
+  StorageLocation,
+  CreateInventoryItemDto,
+  AddBatchDto,
+  AdjustStockDto,
+  BatchRecord,
+} from './types';
 
 export const inventoryApi = {
-  getAll: async (status?: string): Promise<InventoryItem[]> => {
-    const query = status && status !== 'All' ? `?status=${encodeURIComponent(status)}` : '';
-    return restClient<InventoryItem[]>(`/inventory${query}`);
+  async getItems(filters?: { location?: string; status?: string }): Promise<InventoryItem[]> {
+    const params = new URLSearchParams();
+    if (filters?.location) params.append('location', filters.location);
+    if (filters?.status) params.append('status', filters.status);
+
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<InventoryItem[]>(`/inventory/items${qs}`);
+    return res.data;
   },
 
-  getAlerts: async () => {
-    return restClient<{ lowStock: InventoryItem[]; expiringSoon: InventoryItem[] }>('/inventory/alerts');
+  async createItem(dto: CreateInventoryItemDto): Promise<InventoryItem> {
+    const res = await apiClient.post<InventoryItem>('/inventory/items', dto);
+    return res.data;
   },
 
-  updateStock: async (id: string, onHand: string, status?: InventoryItem['status']): Promise<InventoryItem> => {
-    return restClient<InventoryItem>(`/inventory/${id}/stock`, {
-      method: 'PATCH',
-      body: JSON.stringify({ onHand, status }),
-    });
+  async addBatch(dto: AddBatchDto): Promise<BatchRecord> {
+    const res = await apiClient.post<BatchRecord>('/inventory/batches', dto);
+    return res.data;
+  },
+
+  async adjustStock(id: string, dto: AdjustStockDto): Promise<InventoryItem> {
+    const res = await apiClient.patch<InventoryItem>(`/inventory/items/${id}/stock`, dto);
+    return res.data;
+  },
+
+  async getAlerts(): Promise<{ lowStock: InventoryItem[]; expiringSoon: InventoryItem[] }> {
+    const res = await apiClient.get<{ lowStock: InventoryItem[]; expiringSoon: InventoryItem[] }>('/inventory/alerts');
+    return res.data;
+  },
+
+  async getLocations(): Promise<StorageLocation[]> {
+    const res = await apiClient.get<StorageLocation[]>('/inventory/locations');
+    return res.data;
   },
 };
-

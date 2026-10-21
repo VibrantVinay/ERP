@@ -29,6 +29,7 @@ import { reportsApp } from './apps/reports';
 import { branchesApp } from './apps/branches';
 import { usersApp } from './apps/users';
 import { auditApp } from './apps/audit';
+import { settingsApp } from './apps/settings';
 
 export const INSTALLED_APPS = [
   authApp,
@@ -54,6 +55,7 @@ export const INSTALLED_APPS = [
   branchesApp,
   usersApp,
   auditApp,
+  settingsApp,
 ];
 
 export async function createApp(): Promise<Express> {
